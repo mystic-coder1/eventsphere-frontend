@@ -12,7 +12,9 @@ import {
   MapPin,
   ArrowRight,
   Check,
+  ChevronLeft,
   ChevronRight,
+  Layers,
   Star,
   Users,
   Map,
@@ -35,6 +37,63 @@ import {
   getOptimizedCardImageUrl,
 } from '../../lib/cloudinary';
 
+// Helper to format any time string cleanly to 12-hour format with AM/PM (e.g. 14:00 – 16:00 -> 2:00 PM – 4:00 PM)
+const formatTimeRange = (timeRange?: string) => {
+  if (!timeRange) return 'Time TBA';
+  if (/\b(AM|PM)\b/i.test(timeRange)) return timeRange;
+
+  const parts = timeRange.split(/[–\-]/).map((s) => s.trim());
+  if (parts.length === 2) {
+    const formatPart = (timeStr: string) => {
+      const match = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+      if (!match) return timeStr;
+      let hour = parseInt(match[1], 10);
+      const min = match[2];
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      if (hour === 0) hour = 12;
+      else if (hour > 12) hour -= 12;
+      return `${hour}:${min} ${ampm}`;
+    };
+    return `${formatPart(parts[0])} – ${formatPart(parts[1])}`;
+  }
+  return timeRange;
+};
+
+// Convert "HH:MM" or "HH:MM AM/PM" to minutes from midnight
+const parseTimeToMinutes = (timeStr?: string): number => {
+  if (!timeStr) return -1;
+  const cleaned = timeStr.trim().toUpperCase();
+  const ampmMatch = cleaned.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/);
+  if (!ampmMatch) return -1;
+  let hour = parseInt(ampmMatch[1], 10);
+  const min = parseInt(ampmMatch[2], 10);
+  const ampm = ampmMatch[3];
+
+  if (ampm === 'PM' && hour < 12) hour += 12;
+  if (ampm === 'AM' && hour === 12) hour = 0;
+  return hour * 60 + min;
+};
+
+// Extract [startMin, endMin] from timeRange
+const parseTimeRangeMinutes = (timeRange?: string): [number, number] => {
+  if (!timeRange) return [0, 1440];
+  const parts = timeRange.split(/[–\-]/).map((s) => s.trim());
+  if (parts.length < 2) return [0, 1440];
+
+  const endHasAmPm = /(AM|PM)/i.test(parts[1]);
+  const startHasAmPm = /(AM|PM)/i.test(parts[0]);
+
+  let startStr = parts[0];
+  let endStr = parts[1];
+
+  if (endHasAmPm && !startHasAmPm) {
+    const match = parts[1].match(/(AM|PM)/i);
+    if (match) startStr += ' ' + match[1];
+  }
+
+  return [parseTimeToMinutes(startStr), parseTimeToMinutes(endStr)];
+};
+
 export const DelegateHome: React.FC = () => {
   const router = useRouter();
   const {
@@ -55,27 +114,115 @@ export const DelegateHome: React.FC = () => {
     showToast,
   } = useStore();
 
-  // Featured "Up next" session for MPSS 2026: Day 1 Opening Keynote at 10:00 AM – 10:30 AM
-  const featuredSession =
-    sessions.find((s) => s.id === 'mpss26-d1-02') ||
-    sessions.find((s) => s.title.toLowerCase().includes('global semiconductor industry')) ||
-    sessions.find((s) => !/registration|high tea|lunch|tea break|cultural evening|gala dinner/i.test(s.title)) || {
-      id: 'mpss26-d1-02',
-      title: 'Keynote on Global Semiconductor Industry & Technology Trends',
-      timeRange: '10:00 AM – 10:30 AM',
-      room: 'Main Auditorium',
-      day: 1,
-      speakerName: 'Jaswinder Ahuja',
-      speakerDesignation: 'Advisor',
-      speakerCompany: 'India Semiconductor Mission',
-      speakerId: 'speaker-jaswinder-ahuja',
-      isBookmarked: false,
-    };
+  const [activeSessionIndex, setActiveSessionIndex] = useState(0);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [, setClockTick] = useState(0);
 
+  // Auto-refresh live session calculations every 30 seconds
+  useEffect(() => {
+    const timer = setInterval(() => setClockTick((t) => t + 1), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
-  const isFeaturedBookmarked = sessions.some(
-    (s) => s.id === featuredSession.id && s.isBookmarked
-  );
+  // Determine current event day in IST (Oct 23 = Day 1, Oct 24 = Day 2)
+  const eventDay = useMemo(() => {
+    try {
+      const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: 'numeric', day: 'numeric' } as const;
+      const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(new Date());
+      const day = parseInt(parts.find((p) => p.type === 'day')?.value || '23', 10);
+      const month = parseInt(parts.find((p) => p.type === 'month')?.value || '10', 10);
+      if (month === 10 && day >= 24) return 2;
+      return 1;
+    } catch {
+      return 1;
+    }
+  }, []);
+
+  // Resolve Live now vs Up next sessions dynamically from agenda
+  const { activeSessions, isLiveNow } = useMemo(() => {
+    if (!sessions || sessions.length === 0) {
+      return { activeSessions: [], isLiveNow: false };
+    }
+
+    // 1. Any session explicitly marked 'live' in the database/store
+    const liveMarked = sessions.filter((s) => s.status === 'live');
+    if (liveMarked.length > 0) {
+      return { activeSessions: liveMarked, isLiveNow: true };
+    }
+
+    // 2. Real-time time window detection in IST
+    try {
+      const options = { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: 'numeric', hour12: false } as const;
+      const formatter = new Intl.DateTimeFormat('en-US', options);
+      const parts = formatter.format(new Date()).split(':');
+      const nowMinutes = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+
+      // Filter by today's day
+      const todaySessions = sessions.filter((s) => (s.day || 1) === eventDay);
+      const nonBreakSessions = todaySessions.filter(
+        (s) => !/registration|high tea|lunch|tea break|cultural evening|gala dinner/i.test(s.title)
+      );
+      const candidatePool = nonBreakSessions.length > 0 ? nonBreakSessions : (todaySessions.length > 0 ? todaySessions : sessions);
+
+      // Check for currently running sessions
+      const runningSessions = candidatePool.filter((s) => {
+        const [startMin, endMin] = parseTimeRangeMinutes(s.timeRange);
+        return nowMinutes >= startMin && nowMinutes < endMin;
+      });
+
+      if (runningSessions.length > 0) {
+        return { activeSessions: runningSessions, isLiveNow: true };
+      }
+
+      // 3. Find the NEXT upcoming time slot
+      const futureSessions = candidatePool
+        .map((s) => {
+          const [startMin] = parseTimeRangeMinutes(s.timeRange);
+          return { session: s, startMin };
+        })
+        .filter((item) => item.startMin > nowMinutes)
+        .sort((a, b) => a.startMin - b.startMin);
+
+      if (futureSessions.length > 0) {
+        const earliestStart = futureSessions[0].startMin;
+        const nextConcurrent = futureSessions
+          .filter((item) => Math.abs(item.startMin - earliestStart) <= 5)
+          .map((item) => item.session);
+
+        return { activeSessions: nextConcurrent, isLiveNow: false };
+      }
+    } catch (e) {
+      console.warn('Error computing live session:', e);
+    }
+
+    // 4. Fallback: Day 1 keynote or first available session
+    const fallback =
+      sessions.find((s) => s.id === 'mpss26-d1-02') ||
+      sessions.find((s) => s.id === 'mpss26-d1-06') ||
+      sessions[0];
+
+    return { activeSessions: fallback ? [fallback] : [], isLiveNow: false };
+  }, [sessions, eventDay]);
+
+  const safeIndex = activeSessionIndex >= activeSessions.length ? 0 : activeSessionIndex;
+  const currentSession = activeSessions[safeIndex] || activeSessions[0];
+  const isCurrentBookmarked = Boolean(currentSession?.isBookmarked);
+
+  const handleCardTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.targetTouches[0].clientX);
+  };
+
+  const handleCardTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null || activeSessions.length <= 1) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX - touchEndX;
+    if (diff > 45) {
+      setActiveSessionIndex((prev) => (prev + 1) % activeSessions.length);
+    } else if (diff < -45) {
+      setActiveSessionIndex((prev) => (prev - 1 + activeSessions.length) % activeSessions.length);
+    }
+    setTouchStartX(null);
+  };
 
   // 10 Curated speakers for "People You Should Meet"
   const recommendedPeople = useMemo(() => {
@@ -460,77 +607,161 @@ export const DelegateHome: React.FC = () => {
         </div>
       </div>
 
-      {/* Up next Section */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between px-0.5">
-          <h3 className="text-[16px] font-bold text-[#111827] tracking-tight">Up next</h3>
-          <button
-            onClick={() => {
-              router.push('/delegate/agenda/allsessions');
-            }}
-            className="text-[12px] font-semibold text-[#DC2626] flex items-center gap-0.5 hover:underline"
-          >
-            <span>View full agenda</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {/* Up next Card */}
-        <div
-          onClick={() => {
-            router.push(`/delegate/agenda/sessions/${featuredSession.id}`);
-          }}
-          className="bg-white rounded-[16px] p-3.5 border border-[#E5E7EB] shadow-xs cursor-pointer hover:border-gray-300 transition-all"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[12.5px] font-bold text-[#111827]">
-              {featuredSession.timeRange
-                ? (featuredSession.timeRange.includes('AM') || featuredSession.timeRange.includes('PM')
-                    ? featuredSession.timeRange
-                    : `${featuredSession.timeRange.replace('–', ' AM – ')} AM`)
-                : '10:00 AM – 10:30 AM'}
-            </span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleBookmarkSession(featuredSession.id);
-              }}
-              className="text-[#111827] p-0.5 hover:scale-110 transition-transform"
-              aria-label="Bookmark session"
-            >
-              {isFeaturedBookmarked ? (
-                <BookmarkCheck className="w-4.5 h-4.5 text-[#DC2626] fill-[#DC2626]" />
-              ) : (
-                <Bookmark className="w-4.5 h-4.5 text-[#111827]" />
+      {/* Live now / Up next Section */}
+      {currentSession && (
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between px-0.5">
+            <div className="flex items-center gap-2">
+              {isLiveNow && (
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
+                </span>
               )}
+              <h3 className="text-[16px] font-bold text-[#111827] tracking-tight flex items-center gap-1.5">
+                {isLiveNow ? 'Live now' : 'Up next'}
+                {isLiveNow && (
+                  <span className="text-[9.5px] font-bold text-red-600 bg-red-50 border border-red-200/80 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    LIVE
+                  </span>
+                )}
+              </h3>
+            </div>
+            <button
+              onClick={() => {
+                router.push('/delegate/agenda/allsessions');
+              }}
+              className="text-[12px] font-semibold text-[#DC2626] flex items-center gap-0.5 hover:underline"
+            >
+              <span>View full agenda</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          <div className="mt-1">
-            <h4 className="text-[14.5px] font-bold text-[#111827] tracking-tight leading-snug">
-              {featuredSession.title || 'Keynote on Global Semiconductor Industry & Technology Trends'}
-            </h4>
-            <div className="flex items-center gap-1.5 text-[11.5px] text-[#6B7280] mt-1">
-              <span className="flex items-center gap-1 flex-shrink-0">
-                <MapPin className="w-3.5 h-3.5 text-[#9CA3AF]" />
-                <span>{featuredSession.room || 'Main Auditorium'}</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Compact View Details Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/delegate/agenda/sessions/${featuredSession.id}`);
+          {/* Swappable Card Container */}
+          <div
+            onTouchStart={handleCardTouchStart}
+            onTouchEnd={handleCardTouchEnd}
+            onClick={() => {
+              router.push(`/delegate/agenda/sessions/${currentSession.id}`);
             }}
-            className="w-full mt-2.5 py-2 bg-[#FAF7F2] hover:bg-[#F2ECE3] text-[#111827] rounded-xl text-[12px] font-bold flex items-center justify-center gap-1 border border-[#EBE7DF] transition-colors"
+            className="bg-white rounded-[16px] p-3.5 border border-[#E5E7EB] shadow-xs cursor-pointer hover:border-gray-300 transition-all relative select-none"
           >
-            <span>View details</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+            {/* Concurrent Sessions Switcher / Header Indicator */}
+            {activeSessions.length > 1 && (
+              <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-gray-100">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#B51F32] flex items-center gap-1">
+                  <Layers className="w-3 h-3 text-[#B51F32]" />
+                  Concurrent Session {safeIndex + 1} of {activeSessions.length}
+                </span>
+
+                <div className="flex items-center gap-1.5">
+                  {/* Indicators / Pills */}
+                  <div className="flex items-center gap-1">
+                    {activeSessions.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveSessionIndex(idx);
+                        }}
+                        className={`h-1.5 rounded-full transition-all ${
+                          safeIndex === idx ? 'w-4 bg-[#B51F32]' : 'w-1.5 bg-gray-300'
+                        }`}
+                        aria-label={`View concurrent session ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Previous / Next arrows for desktop & quick tap */}
+                  <div className="flex items-center gap-1 ml-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveSessionIndex((prev) => (prev - 1 + activeSessions.length) % activeSessions.length);
+                      }}
+                      className="w-5 h-5 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-700 transition-colors"
+                      title="Previous session"
+                    >
+                      <ChevronLeft className="w-3 h-3 stroke-[2.5]" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveSessionIndex((prev) => (prev + 1) % activeSessions.length);
+                      }}
+                      className="w-5 h-5 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-700 transition-colors"
+                      title="Next session"
+                    >
+                      <ChevronRight className="w-3 h-3 stroke-[2.5]" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Time & Bookmark Row */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-[12.5px] font-bold text-[#111827]">
+                  {formatTimeRange(currentSession.timeRange)}
+                </span>
+                {isLiveNow && (
+                  <span className="flex items-center gap-1 text-[9.5px] font-bold text-[#166534] bg-[#DCFCE7] px-2 py-0.5 rounded-full border border-[#BBF7D0]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse" />
+                    IN PROGRESS
+                  </span>
+                )}
+              </div>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleBookmarkSession(currentSession.id);
+                }}
+                className="text-[#111827] p-0.5 hover:scale-110 transition-transform"
+                aria-label="Bookmark session"
+              >
+                {isCurrentBookmarked ? (
+                  <BookmarkCheck className="w-4.5 h-4.5 text-[#DC2626] fill-[#DC2626]" />
+                ) : (
+                  <Bookmark className="w-4.5 h-4.5 text-[#111827]" />
+                )}
+              </button>
+            </div>
+
+            {/* Title & Location */}
+            <div className="mt-1">
+              <h4 className="text-[14.5px] font-bold text-[#111827] tracking-tight leading-snug">
+                {currentSession.title}
+              </h4>
+              <div className="flex items-center gap-2 text-[11.5px] text-[#6B7280] mt-1 flex-wrap">
+                <span className="flex items-center gap-1 flex-shrink-0">
+                  <MapPin className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                  <span>{currentSession.room || 'Grand Hall'}</span>
+                </span>
+                {currentSession.track && (
+                  <span className="text-[10px] font-semibold text-[#475569] bg-[#F1F5F9] px-2 py-0.5 rounded-md border border-[#E2E8F0] truncate max-w-[200px]">
+                    {currentSession.track}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Compact View Details Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/delegate/agenda/sessions/${currentSession.id}`);
+              }}
+              className="w-full mt-2.5 py-2 bg-[#FAF7F2] hover:bg-[#F2ECE3] text-[#111827] rounded-xl text-[12px] font-bold flex items-center justify-center gap-1 border border-[#EBE7DF] transition-colors"
+            >
+              <span>View details</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Quick access Section */}
       <div>

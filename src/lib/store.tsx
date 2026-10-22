@@ -482,13 +482,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 if (b) {
                   return {
                     ...e,
-<<<<<<< HEAD
-                    leads: typeof b.leadCount === 'number' ? b.leadCount : (typeof b.leads === 'number' ? b.leads : e.leads),
-=======
                     leads: typeof b.leadCount === 'number' ? b.leadCount : (typeof (b as any).leads === 'number' ? (b as any).leads : e.leads),
                     category: b.category || e.category,
                     logo: b.logoUrl || e.logo,
->>>>>>> 503542edbfaada4db54111379d809ecea2d0e536
                   };
                 }
                 return e;
