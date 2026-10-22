@@ -877,7 +877,7 @@ export const DelegateHome: React.FC = () => {
 
         <div className="grid grid-cols-2 gap-2.5">
           {(() => {
-            const featuredNames = ['MPSEDC', 'Truechip Solutions', 'DigiComm Semi', 'Analog Devices'];
+            const featuredNames = ['MPSEDC', 'IET-DAVV Indore', 'DigiComm Semi', 'Analog Devices'];
             const seen = new Set<string>();
             const uniqueExhibitors = exhibitors.filter((e) => {
               const key = (e.company || '').toLowerCase().trim();
@@ -887,7 +887,13 @@ export const DelegateHome: React.FC = () => {
             });
 
             const matched = featuredNames
-              .map((name) => uniqueExhibitors.find((e) => e.company.toLowerCase().trim() === name.toLowerCase().trim()))
+              .map((name) =>
+                uniqueExhibitors.find((e) => {
+                  const c = e.company.toLowerCase().trim();
+                  const n = name.toLowerCase().trim();
+                  return c === n || c.includes(n) || n.includes(c);
+                })
+              )
               .filter(Boolean);
 
             const displayCompanies = matched.length === 4 ? matched : uniqueExhibitors.slice(0, 4);
