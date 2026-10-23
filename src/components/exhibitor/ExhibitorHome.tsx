@@ -15,7 +15,7 @@ export const ExhibitorHome: React.FC = React.memo(() => {
 
   const exhibitorCompany = currentUser?.company || 'Truechip Solutions';
   const exhibitorBooth = currentUser?.boothNumber || 'Booth 49';
-  const exhibitorLogo = currentUser?.avatar || '/images/exhibitors/truechip.png';
+  const exhibitorLogo = currentUser?.avatar || 'https://res.cloudinary.com/vc0wtqtw/image/upload/v1792696048/03-truesilicon.jpg';
 
   const companyProducts = useMemo(
     () => products.filter((p) => !currentUser?.company || p.company.toLowerCase().includes(currentUser.company.toLowerCase())),

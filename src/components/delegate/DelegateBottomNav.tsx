@@ -18,6 +18,7 @@ export const DelegateBottomNav: React.FC = () => {
     setViewSavedCompaniesOnly,
     setViewSavedPeopleOnly,
     setScheduleSubTab,
+    setScheduleDay,
     sessionBackTab,
     setSessionBackTab,
   } = useStore();
@@ -36,6 +37,7 @@ export const DelegateBottomNav: React.FC = () => {
     if (item.id === 'schedule') {
       setScheduleSubTab('all');
       setSessionBackTab('schedule');
+      setScheduleDay(2);
     }
     if (item.id === 'home') {
       setViewSavedPeopleOnly(false);

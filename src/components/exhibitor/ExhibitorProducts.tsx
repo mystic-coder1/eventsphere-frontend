@@ -143,7 +143,7 @@ export const ExhibitorProducts: React.FC = React.memo(() => {
       category: formCategory.trim() || 'Verification IP & EDA',
       company: 'Truechip Solutions',
       booth: '49',
-      image: '/images/exhibitors/truechip.png',
+      image: 'https://res.cloudinary.com/vc0wtqtw/image/upload/v1792696048/03-truesilicon.jpg',
       views: 0,
       enquiries: 0,
       interestedVisitorsCount: 0,

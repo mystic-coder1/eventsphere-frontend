@@ -5,12 +5,13 @@ import { useStore } from '../../../../lib/store';
 import { DelegateSchedule } from '../../../../components/delegate/DelegateSchedule';
 
 export default function AllSessionsPage() {
-  const { setScheduleSubTab, setSelectedSessionId } = useStore();
+  const { setScheduleSubTab, setSelectedSessionId, setScheduleDay } = useStore();
 
   useEffect(() => {
     setScheduleSubTab('all');
     setSelectedSessionId(null);
-  }, [setScheduleSubTab, setSelectedSessionId]);
+    setScheduleDay(2);
+  }, [setScheduleSubTab, setSelectedSessionId, setScheduleDay]);
 
   return <DelegateSchedule />;
 }

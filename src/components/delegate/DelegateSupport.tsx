@@ -3,7 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '../../lib/store';
-import { ChevronLeft, Phone, Mail, MapPin } from 'lucide-react';
+import { ChevronLeft, Mail } from 'lucide-react';
 
 export const DelegateSupport: React.FC = () => {
   const router = useRouter();
@@ -33,52 +33,32 @@ export const DelegateSupport: React.FC = () => {
         </div>
       </div>
 
-      {/* Content: Helpdesk Hotlines only */}
+      {/* Content: Helpdesk Support */}
       <div className="flex-1 overflow-y-auto px-3 py-3 pb-3 space-y-3">
-        {/* Helpdesk Hotlines Card */}
-        <div className="bg-white p-4 rounded-[16px] border border-[#DEDCD7] shadow-xs space-y-3.5">
+        {/* Helpdesk Support Card */}
+        <div className="bg-white p-4 rounded-[16px] border border-[#DEDCD7] shadow-xs space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-[14px] font-bold text-[#181818]">Helpdesk Hotlines</span>
-            <span className="flex items-center gap-1 text-[10px] font-bold text-[#166534] bg-[#DCFCE7] px-2 py-0.5 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse" />
-              Available 8 AM – 8 PM
-            </span>
+            <span className="text-[14px] font-bold text-[#181818]">Helpdesk Support</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            <a
-              href="tel:+917314255000"
-              className="p-3 rounded-xl border border-[#E5E7EB] hover:border-[#181818] bg-[#F9FAFB] hover:bg-white flex flex-col gap-1 transition-all group shadow-2xs"
-            >
-              <div className="flex items-center gap-1.5 text-[#181818]">
-                <Phone className="w-3.5 h-3.5 text-[#DC2626]" />
-                <span className="text-[12px] font-bold">Call Helpdesk</span>
-              </div>
-              <span className="text-[11px] text-[#4B5563] font-mono group-hover:text-[#181818]">
-                +91 731 425 5000
-              </span>
-            </a>
-
+          <div>
             <a
               href="mailto:ed1@mpsedc.com"
-              className="p-3 rounded-xl border border-[#E5E7EB] hover:border-[#181818] bg-[#F9FAFB] hover:bg-white flex flex-col gap-1 transition-all group shadow-2xs"
+              className="p-3.5 rounded-xl border border-[#E5E7EB] hover:border-[#181818] bg-[#F9FAFB] hover:bg-white flex items-center justify-between transition-all group shadow-2xs"
             >
-              <div className="flex items-center gap-1.5 text-[#181818]">
-                <Mail className="w-3.5 h-3.5 text-[#0D9488]" />
-                <span className="text-[12px] font-bold">Email Support</span>
+              <div className="flex items-center gap-2.5 text-[#181818]">
+                <div className="w-8 h-8 rounded-lg bg-[#E6FFFA] flex items-center justify-center">
+                  <Mail className="w-4 h-4 text-[#0D9488]" />
+                </div>
+                <div>
+                  <span className="text-[12px] font-bold block text-[#181818]">Email Support</span>
+                  <span className="text-[11.5px] text-[#4B5563] group-hover:text-[#181818]">
+                    ed1@mpsedc.com
+                  </span>
+                </div>
               </div>
-              <span className="text-[11px] text-[#4B5563] truncate group-hover:text-[#181818]">
-                ed1@mpsedc.com
-              </span>
+              <span className="text-[11px] font-semibold text-[#B51F32]">Contact &rarr;</span>
             </a>
-          </div>
-
-          <div className="pt-2.5 border-t border-[#F3F4F6] flex items-center justify-between text-[11px] text-[#6B6B6B]">
-            <span className="flex items-center gap-1">
-              <MapPin className="w-3 h-3 text-[#9CA3AF]" />
-              Physical Desk: Ground Floor Foyer A
-            </span>
-            <span className="font-semibold text-[#181818]">Counter 01</span>
           </div>
         </div>
       </div>

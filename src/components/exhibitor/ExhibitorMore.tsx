@@ -43,7 +43,7 @@ export const ExhibitorMore: React.FC = React.memo(() => {
 
   const companyName = currentUser?.company || 'Truechip Solutions';
   const boothInfo = currentUser?.boothNumber || 'Booth 49';
-  const avatarUrl = currentUser?.avatar || '/images/exhibitors/truechip.png';
+  const avatarUrl = currentUser?.avatar || 'https://res.cloudinary.com/vc0wtqtw/image/upload/v1792696048/03-truesilicon.jpg';
 
   return (
     <div className="flex-1 bg-[#F6F4F0] select-none px-4 pt-4 pb-24 space-y-5">
@@ -272,7 +272,7 @@ export const ExhibitorMore: React.FC = React.memo(() => {
                   <div className="bg-white p-4 rounded-2xl border border-[#DEDCD7] shadow-sm space-y-3">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center p-1 border border-gray-200 shadow-sm overflow-hidden">
-                        <img src="/images/exhibitors/truechip.png" alt="Truechip" className="w-full h-full object-contain" />
+                        <img src="https://res.cloudinary.com/vc0wtqtw/image/upload/v1792696048/03-truesilicon.jpg" alt="Truechip" className="w-full h-full object-contain" />
                       </div>
                       <div>
                         <h4 className="text-[18px] font-serif font-bold text-[#181818]">
