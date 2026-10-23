@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { DelegateOrganizers } from '../../../components/delegate/DelegateOrganizers';
 

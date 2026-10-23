@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useStore } from '../lib/store';
 import dynamic from 'next/dynamic';
 import { PhoneFrame } from '../components/shell/PhoneFrame';
-import { AccessScreen } from '../components/auth/AccessScreen';
 
 // Exhibitor views (dynamically loaded on demand)
 const ExhibitorHome = dynamic(() => import('../components/exhibitor/ExhibitorHome').then(m => m.ExhibitorHome), { ssr: false });
@@ -80,11 +79,7 @@ export default function App() {
       )}
 
       {/* Main View Router based on Role */}
-      {!hasAccessConfirmed ? (
-        <PhoneFrame>
-          <AccessScreen onSuccess={() => setHasAccessConfirmed(true)} />
-        </PhoneFrame>
-      ) : role === 'organizer' ? (
+      {role === 'organizer' ? (
         /* Full-Width Desktop Organizer Console */
         <OrganizerConsole />
       ) : role === 'delegate' ? (
@@ -93,7 +88,7 @@ export default function App() {
           <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-3">
             <div className="w-8 h-8 border-2 border-[#181818] border-t-transparent rounded-full animate-spin" />
             <p className="text-[12px] font-semibold text-[#6B6B6B] tracking-wide uppercase">
-              Loading Portal...
+              Loading Summit...
             </p>
           </div>
         </PhoneFrame>

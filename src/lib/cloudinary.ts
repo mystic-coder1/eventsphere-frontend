@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Cloudinary & Image URL Optimization Utility
  * 
  * Provides automated transformations for Cloudinary-hosted assets:

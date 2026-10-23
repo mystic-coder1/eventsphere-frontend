@@ -21,8 +21,6 @@ export const DelegateSpeakers: React.FC = () => {
     connections,
     connectWith,
     setSelectedPersonId,
-    savedPeopleIds,
-    toggleSavePerson,
   } = useStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -135,17 +133,6 @@ export const DelegateSpeakers: React.FC = () => {
             className="bg-white rounded-[16px] p-2.5 mb-3 border border-[#E5E7EB] hover:border-gray-400 transition-all shadow-xs cursor-pointer flex flex-col group select-none"
           >
             <div className="relative w-full h-[120px] rounded-[12px] overflow-hidden bg-slate-50 shrink-0 border border-slate-200/70 flex items-center justify-center">
-              {/* Star / Save button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleSavePerson(cmSpeaker.id);
-                }}
-                className="absolute top-2 left-2 w-[26px] h-[26px] rounded-[6px] bg-white/95 shadow-xs border border-white/80 flex items-center justify-center transition-transform active:scale-90 hover:scale-105 z-10"
-                title={savedPeopleIds.includes(cmSpeaker.id) ? "Remove from Saved" : "Save Speaker"}
-              >
-                <Star className={`w-3.5 h-3.5 ${savedPeopleIds.includes(cmSpeaker.id) ? 'fill-yellow-400 text-yellow-500' : 'text-gray-400'}`} />
-              </button>
               {cmSpeaker.avatar || getCloudinaryProfileUrl(cmSpeaker.name) ? (
                 <>
                   <img
@@ -219,17 +206,6 @@ export const DelegateSpeakers: React.FC = () => {
                 <div>
                   {/* Photo with LinkedIn Badge */}
                   <div className="relative w-full h-[126px] rounded-[12px] overflow-hidden bg-slate-100 shrink-0 border border-slate-200/70">
-                    {/* Star / Save button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleSavePerson(speaker.id);
-                      }}
-                      className="absolute top-2 left-2 w-[26px] h-[26px] rounded-[6px] bg-white/95 shadow-xs border border-white/80 flex items-center justify-center transition-transform active:scale-90 hover:scale-105 z-10"
-                      title={savedPeopleIds.includes(speaker.id) ? "Remove from Saved" : "Save Speaker"}
-                    >
-                      <Star className={`w-3.5 h-3.5 ${savedPeopleIds.includes(speaker.id) ? 'fill-yellow-400 text-yellow-500' : 'text-gray-400'}`} />
-                    </button>
                     {speaker.avatar || getCloudinaryProfileUrl(speaker.name) ? (
                       <>
                         <img

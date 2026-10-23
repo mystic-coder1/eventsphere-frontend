@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { LucideIcon, ChevronLeft } from 'lucide-react';
 
 export type ThemeColor = 'red' | 'green' | 'blue' | 'purple' | 'amber' | 'gray';

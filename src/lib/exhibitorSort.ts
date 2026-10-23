@@ -1,4 +1,4 @@
-import { getOfficialBoothNumber } from './officialBooths';
+﻿import { getOfficialBoothNumber } from './officialBooths';
 
 /**
  * Extracts the first numeric value from a booth string.

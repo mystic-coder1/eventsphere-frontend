@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { DelegateFounders } from '../../../components/delegate/DelegateFounders';
 

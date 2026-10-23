@@ -1,18 +1,8 @@
-const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
-
 const nextConfig = {
   reactStrictMode: true,
   compress: true,
   poweredByHeader: false,
   swcMinify: true,
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${backendUrl}/api/:path*`,
-      },
-    ];
-  },
   async headers() {
     return [
       {

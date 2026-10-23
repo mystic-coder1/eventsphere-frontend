@@ -16,7 +16,6 @@ export const DelegateAIRecommendations: React.FC = () => {
     sessions,
     setSelectedSessionId,
     setSessionBackTab,
-    toggleBookmarkSession
   } = useStore();
 
   const isConnected = (personId: string) => connections.some((c) => c.personId === personId && c.status === 'connected');
@@ -149,28 +148,6 @@ export const DelegateAIRecommendations: React.FC = () => {
                   </h4>
                   <p className="text-[10.5px] text-[#6B6B6B] mt-0.5">{session.speakerName || 'Not published'}</p>
                 </div>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleBookmarkSession(session.id);
-                  }}
-                  className={`w-full py-1.5 rounded-[6px] text-[11.5px] font-bold transition-all active:scale-95 border flex items-center justify-center gap-1.5 ${
-                    session.isBookmarked 
-                      ? 'border-[#0D9488] bg-[#F0FDF4] text-[#0D9488]'
-                      : 'border-[#181818] text-[#181818] bg-white hover:bg-gray-50'
-                  }`}
-                >
-                  {session.isBookmarked ? (
-                    <>
-                      <Check className="w-3 h-3" /> Added to Schedule
-                    </>
-                  ) : (
-                    <>
-                      <CalendarPlus className="w-3 h-3" /> Add to Schedule
-                    </>
-                  )}
-                </button>
               </div>
             ))}
           </div>

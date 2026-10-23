@@ -1,4 +1,4 @@
-import { ExhibitorStats } from '../types';
+﻿import { ExhibitorStats } from '../types';
 
 /**
  * Generates a clean URL slug from a company name.

@@ -12,20 +12,15 @@ import { getOfficialBoothNumber, formatBoothBadge } from '../../lib/officialBoot
 export const DelegateCompanies: React.FC = () => {
   const router = useRouter();
   const {
-    setActiveDelegateTab,
-    setSelectedCompanyId,
     exhibitors,
-    viewSavedCompaniesOnly,
-    setViewSavedCompaniesOnly,
-    savedCompanyIds,
   } = useStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [renderLimit, setRenderLimit] = useState(25);
 
-    React.useEffect(() => {
+  React.useEffect(() => {
     setRenderLimit(25);
-  }, [searchQuery, viewSavedCompaniesOnly]);
+  }, [searchQuery]);
 
   const filteredExhibitors = useMemo(() => {
     const seen = new Set<string>();
@@ -37,8 +32,6 @@ export const DelegateCompanies: React.FC = () => {
     });
 
     const list = uniqueList.filter((company) => {
-      if (viewSavedCompaniesOnly && !savedCompanyIds.includes(company.id)) return false;
-
       const officialBooth = getOfficialBoothNumber(company.company, company.booth);
       if (officialBooth === 'TBA') return false;
 
@@ -52,45 +45,20 @@ export const DelegateCompanies: React.FC = () => {
     });
 
     return sortExhibitors(list);
-  }, [exhibitors, viewSavedCompaniesOnly, savedCompanyIds, searchQuery]);
+  }, [exhibitors, searchQuery]);
 
   return (
     <div className="flex-1 min-h-0 h-full bg-[#F8F7F4] select-none flex flex-col overflow-hidden">
-      {/* Fixed Top Section: Header & Search matching Schedule */}
+      {/* Fixed Top Section: Header & Search */}
       <div className="shrink-0 bg-[#F8F7F4] px-3 z-10 border-b border-[#E5E7EB]">
-        {/* Header section matching reference mockup */}
+        {/* Header section */}
         <div className="pt-4 pb-1">
-          {viewSavedCompaniesOnly ? (
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10.5px] uppercase tracking-[0.15em] text-[#6B6B6B] font-semibold mb-0.5">
-                  MPSS26 · SAVED
-                </p>
-                <h1 className="text-[32px] font-sans font-semibold text-[#181818] tracking-tight leading-none">
-                  Saved Exhibitors
-                </h1>
-              </div>
-              <button
-                onClick={() => {
-                  setViewSavedCompaniesOnly(false);
-                  router.push('/delegate/profile');
-                }}
-                className="px-3 py-1.5 rounded-full bg-white border border-[#DEDCD7] text-[#181818] font-bold text-[11px] shadow-sm hover:bg-[#FAF9F5] active:scale-95 transition-all flex items-center gap-1 shrink-0"
-              >
-                <ChevronLeft className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>Profile</span>
-              </button>
-            </div>
-          ) : (
-            <div>
-              <p className="text-[10.5px] uppercase tracking-[0.15em] text-[#6B6B6B] font-semibold mb-0.5">
-                MPSS26 · DIRECTORY
-              </p>
-              <h1 className="text-[32px] font-sans font-semibold text-[#181818] tracking-tight leading-none">
-                Exhibitors
-              </h1>
-            </div>
-          )}
+          <p className="text-[10.5px] uppercase tracking-[0.15em] text-[#6B6B6B] font-semibold mb-0.5">
+            MPSS26 · DIRECTORY
+          </p>
+          <h1 className="text-[32px] font-sans font-semibold text-[#181818] tracking-tight leading-none">
+            Exhibitors
+          </h1>
         </div>
 
         {/* Search Bar */}
@@ -100,7 +68,7 @@ export const DelegateCompanies: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={viewSavedCompaniesOnly ? "Search saved exhibitors..." : "Search companies, booths, or tags..."}
+            placeholder="Search companies, booths, or tags..."
             className="w-full h-10 bg-white border border-[#E5E7EB] rounded-[10px] pl-10 pr-9 text-[12.5px] focus:ring-2 focus:ring-[#B51F32]/20 focus:border-[#B51F32] outline-none text-[#181818] placeholder-[#9CA3AF] shadow-xs transition-all"
           />
           {searchQuery && (
@@ -117,7 +85,7 @@ export const DelegateCompanies: React.FC = () => {
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2.5 no-scrollbar pb-2.5">
         <p className="text-[11.5px] font-semibold text-[#6B6B6B] px-0.5">
-          {filteredExhibitors.length} {viewSavedCompaniesOnly ? 'Saved Exhibitor' : 'Exhibitor'}{filteredExhibitors.length !== 1 ? 's' : ''}
+          {filteredExhibitors.length} Exhibitor{filteredExhibitors.length !== 1 ? 's' : ''}
         </p>
 
         {filteredExhibitors.length === 0 ? (

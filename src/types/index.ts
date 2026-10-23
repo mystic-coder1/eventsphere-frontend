@@ -1,4 +1,4 @@
-export type RoleType = 'delegate' | 'speaker' | 'vip' | 'guest' | 'exhibitor_staff' | 'organizer_staff';
+﻿export type RoleType = 'delegate' | 'speaker' | 'vip' | 'guest' | 'exhibitor_staff' | 'organizer_staff';
 
 export type DemoRole = 'delegate' | 'exhibitor' | 'organizer';
 

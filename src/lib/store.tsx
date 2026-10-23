@@ -182,17 +182,6 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 const STORAGE_KEY = 'eventsphere_mpss26_store_v13';
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Preemptively warm up Cloud Run backend on initial page load
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-        if (backendUrl) {
-          fetch(`${backendUrl}/actuator/health`, { method: 'GET', mode: 'cors' }).catch(() => {});
-        }
-      } catch {}
-    }
-  }, []);
   // Navigation & Role
   const [role, setRoleState] = useState<DemoRole>('delegate');
   const [activeDelegateTab, setActiveDelegateTab] = useState<'home' | 'people' | 'scan' | 'focus' | 'schedule' | 'profile' | 'companies' | 'company_detail' | 'edit_profile' | 'ai_recommendations' | 'speakers' | 'map' | 'sponsors' | 'support'>('home');
@@ -209,9 +198,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [syncPendingCount, setSyncPendingCount] = useState<number>(0);
   const [lastSyncedTime, setLastSyncedTime] = useState<string>('12:40 PM');
 
-  // Access Flow
-  const [hasAccessConfirmed, setHasAccessConfirmed] = useState<boolean>(false);
-  const [isSessionLoading, setIsSessionLoading] = useState<boolean>(true);
+  // Access Flow - Direct Instant Entry (No login required)
+  const [hasAccessConfirmed, setHasAccessConfirmed] = useState<boolean>(true);
+  const [isSessionLoading, setIsSessionLoading] = useState<boolean>(false);
 
   // Selected Detail Views
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
@@ -234,54 +223,20 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, 2800);
   }, []);
 
-  const toggleSaveCompany = useCallback(async (id: string) => {
-    const isSaved = savedCompanyIds.includes(id);
-    // Optimistic UI update
-    setSavedCompanyIds((prev) => (isSaved ? prev.filter((c) => c !== id) : [...prev, id]));
+  const toggleSaveCompany = useCallback((id: string) => {
+    setSavedCompanyIds((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
+  }, []);
 
-    try {
-      if (isSaved) {
-        await api.attendees.unsaveExhibitor(id);
-        showToast('Company removed from saved list', 'info');
-      } else {
-        await api.attendees.saveExhibitor(id);
-        showToast('Company saved to My Exhibitors ✓', 'success');
-      }
-    } catch (err: any) {
-      console.warn('Backend toggleSaveCompany error:', err);
-      // Rollback on failure
-      setSavedCompanyIds((prev) => (isSaved ? [...prev, id] : prev.filter((c) => c !== id)));
-      showToast(err?.message || 'Failed to update saved company on server', 'error');
-    }
-  }, [savedCompanyIds, showToast]);
+  const toggleSavePerson = useCallback((id: string) => {
+    setSavedPeopleIds((prev) => (prev.includes(id) ? prev.filter((pId) => pId !== id) : [...prev, id]));
+  }, []);
 
-  const toggleSavePerson = useCallback(async (id: string) => {
-    const isSaved = savedPeopleIds.includes(id);
-    // Optimistic UI update
-    setSavedPeopleIds((prev) => (isSaved ? prev.filter((pId) => pId !== id) : [...prev, id]));
-
-    try {
-      if (isSaved) {
-        await api.attendees.unsavePerson(id);
-        showToast('Removed from Saved People', 'info');
-      } else {
-        await api.attendees.savePerson(id);
-        showToast('Saved to My People', 'success');
-      }
-    } catch (err: any) {
-      console.warn('Backend toggleSavePerson error:', err);
-      // Rollback on failure
-      setSavedPeopleIds((prev) => (isSaved ? [...prev, id] : prev.filter((pId) => pId !== id)));
-      showToast(err?.message || 'Failed to update saved person on server', 'error');
-    }
-  }, [savedPeopleIds, showToast]);
-
-  // Entities
+  // Entities - Ready-to-use summit content
   const [event, setEvent] = useState<EventMetadata>(INITIAL_EVENT);
-  const [currentUser, setCurrentUser] = useState<Person>(EMPTY_USER);
+  const [currentUser, setCurrentUser] = useState<Person>(CURRENT_USER);
   const [attendees, setAttendees] = useState<Person[]>(INITIAL_ATTENDEES);
-  const [connections, setConnections] = useState<Connection[]>(process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ? INITIAL_CONNECTIONS : []);
-  const [leads, setLeads] = useState<Lead[]>(process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ? INITIAL_LEADS : []);
+  const [connections, setConnections] = useState<Connection[]>(INITIAL_CONNECTIONS);
+  const [leads, setLeads] = useState<Lead[]>(INITIAL_LEADS);
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [sessions, setSessions] = useState<Session[]>(INITIAL_SESSIONS);
   const [questions, setQuestions] = useState<Question[]>(INITIAL_QUESTIONS);
@@ -318,646 +273,40 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     clearUserSessionState();
   }, [clearUserSessionState]);
 
-  // Load from localStorage on mount (strictly user-scoped)
+  // Load from localStorage on mount if previously customized
   useEffect(() => {
     try {
-      const token = api.getToken();
-      const authUser = api.getUser();
-      if (!token || !authUser?.id) {
-        clearUserSessionState();
-        setHasAccessConfirmed(false);
-        setIsSessionLoading(false);
-        return;
-      }
-
-      const userStorageKey = `${STORAGE_KEY}_${authUser.id}`;
-      let saved = localStorage.getItem(userStorageKey);
-      if (!saved) {
-        const legacy = localStorage.getItem(STORAGE_KEY);
-        if (legacy) {
-          try {
-            const parsedLegacy = JSON.parse(legacy);
-            if (parsedLegacy?.currentUser?.id === authUser.id) {
-              saved = legacy;
-            }
-          } catch {
-            // ignore
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed?.currentUser) {
+            setCurrentUser((prev) => ({ ...prev, ...parsed.currentUser }));
           }
         }
-      }
-
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.currentUser && parsed.currentUser.id === authUser.id) {
-          const u = { ...EMPTY_USER, ...parsed.currentUser };
-          if (isPlaceholderDesignation(u.designation)) {
-            u.designation = '';
-          }
-          if (isPlaceholderCompany(u.company)) {
-            u.company = '';
-          }
-          if (u.mobile === 'Not listed') {
-            u.mobile = '';
-          }
-          if (u.email) {
-            const storedImg = getStoredProfileImage(u.email);
-            if (storedImg) {
-              u.avatar = storedImg;
-            }
-          }
-          if (!u.privacy || (u.privacy.preset as any) === 'Private') {
-            u.privacy = {
-              preset: 'Connections Only',
-              shareEmail: true,
-              sharePhone: true,
-              shareLinkedIn: true,
-              shareTwitter: false,
-            };
-          }
-          setCurrentUser(u);
-        } else {
-          setCurrentUser((prev) => {
-            const rawDesig = authUser.designation || prev.designation || '';
-            const rawComp = authUser.company || prev.company || '';
-            return {
-              ...EMPTY_USER,
-              ...prev,
-              id: authUser.id,
-              name: authUser.name || prev.name,
-              mobile: authUser.mobile && authUser.mobile !== 'Not listed' ? authUser.mobile : (prev.mobile && prev.mobile !== 'Not listed' ? prev.mobile : ''),
-              email: authUser.email || prev.email,
-              designation: isPlaceholderDesignation(rawDesig) ? '' : rawDesig,
-              company: isPlaceholderCompany(rawComp) ? '' : rawComp,
-            };
-          });
-        }
-        if (parsed.role) setRoleState(parsed.role);
-        if (typeof parsed.hasAccessConfirmed === 'boolean') {
-          setHasAccessConfirmed(parsed.hasAccessConfirmed);
-        } else {
-          setHasAccessConfirmed(true);
-        }
-        if (parsed.savedPeopleIds && Array.isArray(parsed.savedPeopleIds)) {
-          setSavedPeopleIds(parsed.savedPeopleIds);
-        }
-        if (parsed.savedCompanyIds && Array.isArray(parsed.savedCompanyIds)) {
-          setSavedCompanyIds(parsed.savedCompanyIds);
-        }
-      } else {
-        setCurrentUser({
-          ...EMPTY_USER,
-          id: authUser.id,
-          name: authUser.name || '',
-          mobile: authUser.mobile && authUser.mobile !== 'Not listed' ? authUser.mobile : '',
-          email: authUser.email || '',
-          designation: '',
-          company: '',
-        });
-        setHasAccessConfirmed(true);
       }
     } catch {
       // ignore
     } finally {
+      setHasAccessConfirmed(true);
       setIsSessionLoading(false);
     }
-  }, [clearUserSessionState]);
+  }, []);
 
   // Save to localStorage when state changes (strictly user-scoped)
   useEffect(() => {
-    if (!hasAccessConfirmed || !currentUser?.id) {
-      return;
-    }
-    const userStorageKey = `${STORAGE_KEY}_${currentUser.id}`;
-    const payload = {
-      currentUser,
-      role,
-      hasAccessConfirmed,
-      savedPeopleIds,
-      savedCompanyIds,
-    };
+    if (!currentUser?.id) return;
     const timer = setTimeout(() => {
       try {
-        localStorage.setItem(userStorageKey, JSON.stringify(payload));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ currentUser, role }));
       } catch {
         // ignore
       }
     }, 150);
     return () => clearTimeout(timer);
-  }, [
-    currentUser,
-    role,
-    hasAccessConfirmed,
-    savedPeopleIds,
-    savedCompanyIds,
-  ]);
+  }, [currentUser, role]);
 
-  // Sync live metrics and exhibitors from backend when organizer console is active
-  useEffect(() => {
-    if (role === 'organizer' && hasAccessConfirmed) {
-      api.organizer.getMetrics()
-        .then((m) => {
-          if (m && m.totalRegistered !== undefined) {
-            setEvent((prev) => ({
-              ...prev,
-              totalRegistered: m.totalRegistered,
-              totalCheckedIn: m.totalCheckedIn,
-              totalExhibitors: m.totalExhibitors || prev.totalExhibitors,
-              totalSpeakers: m.totalSpeakers || prev.totalSpeakers,
-              totalConnections: m.totalConnections !== undefined ? m.totalConnections : prev.totalConnections,
-              totalScans: m.totalLeads ? (m.totalLeads + (m.totalConnections || 0)) : prev.totalScans,
-            }));
-          }
-        })
-        .catch((err) => {
-          console.warn('Backend metrics fetch skipped:', err);
-        });
-
-      api.organizer.getExhibitors()
-        .then((exhList) => {
-          if (exhList && Array.isArray(exhList) && exhList.length > 0) {
-            setExhibitors((prev) => {
-              const bNameMap = new Map(exhList.map((e) => [(e.company || '').toLowerCase().trim(), e]));
-              return prev.map((e) => {
-                const b = bNameMap.get(e.company.toLowerCase().trim());
-                if (b) {
-                  return {
-                    ...e,
-                    leads: typeof b.leadCount === 'number' ? b.leadCount : (typeof (b as any).leads === 'number' ? (b as any).leads : e.leads),
-                    category: b.category || e.category,
-                    logo: b.logoUrl || e.logo,
-                  };
-                }
-                return e;
-              });
-            });
-          }
-        })
-        .catch((err) => {
-          console.warn('Backend organizer exhibitors fetch skipped:', err);
-        });
-    }
-  }, [role, hasAccessConfirmed]);
-
-  // Sync live exhibitor stats when exhibitor portal is active
-  useEffect(() => {
-    if (role === 'exhibitor' && hasAccessConfirmed) {
-      api.exhibitor.getStats()
-        .then((stats) => {
-          if (stats && stats.company) {
-            setCurrentUser((prev) => ({
-              ...prev,
-              company: stats.company || prev.company,
-              boothNumber: stats.booth || prev.boothNumber,
-              avatar: stats.logoUrl || prev.avatar,
-            }));
-            setExhibitors((prev) => {
-              const idx = prev.findIndex((e) => e.company.toLowerCase() === stats.company?.toLowerCase());
-              if (idx >= 0) {
-                const copy = [...prev];
-                copy[idx] = {
-                  ...copy[idx],
-                  teamSize: stats.teamSize || copy[idx].teamSize,
-                  leads: typeof stats.totalLeads === 'number' ? stats.totalLeads : copy[idx].leads,
-                  enquiries: typeof stats.totalEnquiries === 'number' ? stats.totalEnquiries : copy[idx].enquiries,
-                  visits: typeof stats.totalViews === 'number' ? stats.totalViews : copy[idx].visits,
-                };
-                return copy;
-              }
-              return prev;
-            });
-          }
-        })
-        .catch((err) => {
-          console.warn('Backend exhibitor stats fetch skipped:', err);
-        });
-    }
-  }, [role, hasAccessConfirmed]);
-
-  // Sync live exhibitors from public directory (authenticated, any role)
-  useEffect(() => {
-    if (hasAccessConfirmed) {
-      api.exhibitors.getAll()
-        .then((backendExhibitors) => {
-          if (backendExhibitors && Array.isArray(backendExhibitors) && backendExhibitors.length > 0) {
-            setExhibitors((prev) => {
-              const bNameMap = new Map(backendExhibitors.map((b: any) => [(b.company || '').toLowerCase().trim(), b]));
-              return prev.map((e) => {
-                const b = bNameMap.get(e.company.toLowerCase().trim());
-                if (b) {
-                  return {
-                    ...e,
-                    leads: typeof b.leadCount === 'number' ? b.leadCount : (typeof b.leads === 'number' ? b.leads : e.leads),
-                  };
-                }
-                return e;
-              });
-            });
-          }
-        })
-        .catch((err) => {
-          console.warn('Backend public exhibitors fetch skipped:', err);
-        });
-    }
-  }, [hasAccessConfirmed]);
-
-  // Sync live sessions & bookmarks from MySQL backend
-  useEffect(() => {
-    if (hasAccessConfirmed) {
-      api.sessions.getAll()
-        .then((backendSessions) => {
-          if (backendSessions && Array.isArray(backendSessions) && backendSessions.length > 0) {
-            setSessions((prev) => {
-              const bMap = new Map(backendSessions.map((b: any) => [b.id, b]));
-              const bTitleMap = new Map(
-                backendSessions.map((b: any) => [b.title?.toLowerCase().trim(), b])
-              );
-
-              return INITIAL_SESSIONS.map((init) => {
-                const b = bMap.get(init.id) || bTitleMap.get(init.title.toLowerCase().trim());
-                if (b) {
-                  return {
-                    ...init,
-                    panelists: (init.panelists && init.panelists.length > 0) ? init.panelists : (b.panelists || []),
-                    isBookmarked: typeof b.isBookmarked === 'boolean' ? b.isBookmarked : init.isBookmarked,
-                    attendanceCount: typeof b.attendanceCount === 'number' ? b.attendanceCount : init.attendanceCount,
-                    status: b.status || init.status,
-                    questionsCount: typeof b.questionsCount === 'number' ? b.questionsCount : init.questionsCount,
-                  };
-                }
-                return init;
-              });
-            });
-          }
-        })
-        .catch((err) => {
-          console.warn('Backend sessions fetch skipped:', err);
-        });
-    }
-  }, [role, hasAccessConfirmed]);
-
-  // Sync live saved people from MySQL backend
-  useEffect(() => {
-    if (hasAccessConfirmed && role === 'delegate') {
-      api.attendees.getSavedPeople()
-        .then((backendSaved) => {
-          if (backendSaved && Array.isArray(backendSaved)) {
-            const ids = backendSaved.map((p: any) => p.id);
-            setSavedPeopleIds(ids);
-          }
-        })
-        .catch((err) => {
-          console.warn('Backend saved people fetch skipped:', err);
-        });
-    }
-  }, [role, hasAccessConfirmed]);
-
-  // Sync live saved companies (exhibitors) from MySQL backend
-  useEffect(() => {
-    if (hasAccessConfirmed && role === 'delegate') {
-      api.attendees.getSavedExhibitors()
-        .then((backendSaved) => {
-          if (backendSaved && Array.isArray(backendSaved)) {
-            setSavedCompanyIds(backendSaved);
-          }
-        })
-        .catch((err) => {
-          console.warn('Backend saved exhibitors fetch skipped:', err);
-        });
-    }
-  }, [role, hasAccessConfirmed]);
-
-  // Sync live connections from MySQL backend
-  useEffect(() => {
-    if (hasAccessConfirmed && role === 'delegate') {
-      api.attendees.getConnections()
-        .then((backendConns) => {
-          if (backendConns && Array.isArray(backendConns)) {
-            setConnections(backendConns);
-          }
-        })
-        .catch((err) => {
-          console.warn('Backend connections fetch skipped:', err);
-        });
-    }
-  }, [role, hasAccessConfirmed]);
-
-  // Sync live current user profile from MySQL backend
-  useEffect(() => {
-    if (hasAccessConfirmed && role === 'delegate') {
-      api.attendees.getMyProfile()
-        .then((profile) => {
-          if (profile && profile.name) {
-            const rawDesig = profile.designation;
-            const cleanDesig = isPlaceholderDesignation(rawDesig) ? '' : rawDesig;
-            const rawComp = profile.company;
-            const cleanComp = isPlaceholderCompany(rawComp) ? '' : rawComp;
-
-            setCurrentUser((prev) => ({
-              ...prev,
-              name: profile.name || prev.name,
-              designation: cleanDesig || (isPlaceholderDesignation(prev.designation) ? '' : prev.designation),
-              company: cleanComp || (isPlaceholderCompany(prev.company) ? '' : prev.company),
-              bio: profile.bio || prev.bio,
-              email: profile.email || prev.email,
-              mobile: profile.mobile && profile.mobile !== 'Not listed' ? profile.mobile : prev.mobile,
-              avatar: profile.avatar || prev.avatar,
-              linkedin: profile.linkedin || prev.linkedin,
-              twitter: profile.twitter || prev.twitter,
-              interests: (profile.interests && profile.interests.length > 0) ? profile.interests : prev.interests,
-              skills: (profile.skills && profile.skills.length > 0) ? profile.skills : prev.skills,
-              registrationId: profile.registrationId || prev.registrationId,
-              ticketType: profile.ticketType || prev.ticketType,
-            }));
-          }
-        })
-        .catch((err) => {
-          console.warn('Backend getMyProfile fetch skipped:', err);
-        });
-    }
-  }, [role, hasAccessConfirmed]);
-
-  // Sync live attendees from MySQL backend (deferred slightly to prioritize critical UI paint)
-  useEffect(() => {
-    if (hasAccessConfirmed) {
-      let isCancelled = false;
-      const fetchAttendees = () => {
-        api.attendees.getAll()
-          .then((backendAttendees) => {
-            if (isCancelled) return;
-            if (backendAttendees && Array.isArray(backendAttendees) && backendAttendees.length > 0) {
-              setAttendees((prev) => {
-                const bMap = new Map(backendAttendees.map((a: any) => [a.id, a]));
-                const updated = prev.map((a) => {
-                  const b = bMap.get(a.id);
-                  if (b) {
-                    return {
-                      ...a,
-                      checkedIn: b.checkedIn ?? a.checkedIn,
-                      name: b.name || a.name,
-                      designation: b.designation || a.designation,
-                      company: b.company || a.company,
-                      bio: b.bio || a.bio,
-                      avatar: b.avatar || b.avatarUrl || a.avatar,
-                      linkedin: b.linkedin || a.linkedin,
-                      twitter: b.twitter || a.twitter,
-                      email: b.email || a.email,
-                      mobile: b.mobile || a.mobile,
-                      interests: (b.interests && b.interests.length > 0) ? b.interests : a.interests,
-                      skills: (b.skills && b.skills.length > 0) ? b.skills : a.skills,
-                      ticketType: b.ticketType || a.ticketType,
-                      registrationId: b.registrationId || a.registrationId,
-                    };
-                  }
-                  return a;
-                });
-                const existingIds = new Set(prev.map((e) => e.id));
-                const brandNew = backendAttendees
-                  .filter((b: any) => !existingIds.has(b.id))
-                  .map((b: any) => ({
-                    id: b.id,
-                    name: b.name,
-                    designation: b.designation || '',
-                    company: b.company || '',
-                    role: (b.category as any) || (b.role as any) || 'delegate',
-                    bio: b.bio || `Professional at ${b.company || 'the summit'} focusing on tech innovation.`,
-                    interests: (b.interests && b.interests.length > 0) ? b.interests : ['Semiconductors', 'Technology'],
-                    skills: (b.skills && b.skills.length > 0) ? b.skills : ['Engineering', 'Architecture'],
-                    email: b.email || '',
-                    mobile: b.mobile || '',
-                    avatar: b.avatar || b.avatarUrl || '',
-                    linkedin: b.linkedin || '',
-                    twitter: b.twitter || '',
-                    checkedIn: Boolean(b.checkedIn),
-                    registrationId: b.registrationId || `#${b.id.slice(-4)}`,
-                    ticketType: b.ticketType || 'Delegate',
-                    privacy: {
-                      preset: 'Connections Only' as const,
-                      shareEmail: true,
-                      sharePhone: true,
-                      shareLinkedIn: true,
-                      shareTwitter: false,
-                    },
-                  }));
-                return [...updated, ...brandNew];
-              });
-            }
-          })
-          .catch((err) => {
-            console.warn('Backend attendees fetch skipped:', err);
-          });
-      };
-
-      const timer = setTimeout(fetchAttendees, 600);
-      return () => {
-        isCancelled = true;
-        clearTimeout(timer);
-      };
-    }
-  }, [role, hasAccessConfirmed]);
-
-  // Sync live exhibitor leads from MySQL backend
-  useEffect(() => {
-    if (hasAccessConfirmed && role === 'exhibitor') {
-      api.exhibitor.getLeads()
-        .then((backendLeads) => {
-          if (backendLeads && Array.isArray(backendLeads)) {
-            setLeads(backendLeads.map((l: any) => ({
-              id: l.id,
-              personId: l.personId || l.attendeeId || '',
-              name: l.name || '',
-              avatar: l.avatar || '',
-              company: l.company || '',
-              designation: l.designation || '',
-              email: l.email || '',
-              mobile: l.mobile || '',
-              linkedin: l.linkedin || '',
-              source: l.source || 'Booth Scan',
-              status: (l.status as any) || 'New',
-              interests: l.interests || [],
-              notes: l.notes || '',
-              capturedAt: l.capturedAt || 'Recently',
-              boothId: l.boothId || '',
-              productsViewed: l.productsViewed || [],
-              syncStatus: 'synced' as const,
-            })));
-          }
-        })
-        .catch((err) => {
-          console.warn('Backend leads fetch skipped:', err);
-        });
-    }
-  }, [role, hasAccessConfirmed]);
-
-  // Sync live exhibitor products from MySQL backend
-  useEffect(() => {
-    if (hasAccessConfirmed && role === 'exhibitor') {
-      api.exhibitor.getProducts()
-        .then((backendProducts) => {
-          if (backendProducts && Array.isArray(backendProducts) && backendProducts.length > 0) {
-            setProducts((prev) => {
-              const bMap = new Map(backendProducts.map((p: any) => [p.id, p]));
-              const updated = prev.map((p) => {
-                const b = bMap.get(p.id);
-                if (b) {
-                  return {
-                    ...p,
-                    name: b.name || p.name,
-                    tagline: b.tagline || p.tagline,
-                    category: b.category || p.category,
-                    views: typeof b.views === 'number' ? b.views : p.views,
-                    enquiries: typeof b.enquiries === 'number' ? b.enquiries : p.enquiries,
-                    interestedVisitorsCount: typeof b.interestedVisitorsCount === 'number' ? b.interestedVisitorsCount : p.interestedVisitorsCount,
-                    overview: b.overview || p.overview,
-                    features: b.features || p.features,
-                    benefits: b.benefits || p.benefits,
-                    useCases: b.useCases || p.useCases,
-                    resources: b.resources ? {
-                      brochureUrl: b.resources.brochureUrl,
-                      videoUrl: b.resources.videoUrl,
-                      websiteUrl: b.resources.websiteUrl,
-                    } : p.resources,
-                  };
-                }
-                return p;
-              });
-              const existingIds = new Set(prev.map((p) => p.id));
-              const brandNew = backendProducts
-                .filter((b: any) => !existingIds.has(b.id))
-                .map((b: any) => ({
-                  id: b.id,
-                  name: b.name,
-                  tagline: b.tagline,
-                  company: b.company || 'Truechip Solutions',
-                  category: b.category,
-                  booth: b.booth || '49',
-                  image: b.image || '/images/products/pcie.png',
-                  views: b.views || 0,
-                  enquiries: b.enquiries || 0,
-                  interestedVisitorsCount: b.interestedVisitorsCount || 0,
-                  overview: b.overview || '',
-                  features: b.features || [],
-                  benefits: b.benefits || [],
-                  useCases: b.useCases || [],
-                  resources: {
-                    brochureUrl: b.resources?.brochureUrl || '',
-                    videoUrl: b.resources?.videoUrl || '',
-                    websiteUrl: b.resources?.websiteUrl || '',
-                  },
-                }));
-              return [...updated, ...brandNew];
-            });
-          }
-        })
-        .catch((err) => {
-          console.warn('Backend products fetch skipped:', err);
-        });
-    }
-  }, [role, hasAccessConfirmed]);
-
-  
-  
-  
-  // Phase 4: Lightweight background refresh for live data (sessions status, questions of active session)
-  // Refreshes every 20–30s with random jitter, only while document is visible, stops on 401
-  useEffect(() => {
-    if (!hasAccessConfirmed) return;
-
-    let timeoutId: NodeJS.Timeout;
-    let isCancelled = false;
-
-    const refreshLiveData = async () => {
-      if (typeof document !== 'undefined' && document.hidden) {
-        timeoutId = setTimeout(refreshLiveData, 10000);
-        return;
-      }
-
-      try {
-        // 1. Sync live sessions with dirty-checking to eliminate unnecessary full-app re-renders
-        const liveSessions = await api.sessions.getAll();
-        if (!isCancelled && Array.isArray(liveSessions) && liveSessions.length > 0) {
-          setSessions((prev) => {
-            const bMap = new Map(liveSessions.map((s: any) => [s.id, s]));
-            let hasChanged = false;
-            const updated = prev.map((s) => {
-              const b = bMap.get(s.id);
-              if (!b) return s;
-              const newStatus = (b.status as any) || s.status;
-              const newAttendance = typeof b.attendanceCount === 'number' ? b.attendanceCount : s.attendanceCount;
-              const newQuestionsCount = typeof b.questionsCount === 'number' ? b.questionsCount : s.questionsCount;
-              const newBookmarked = Boolean(b.isBookmarked);
-              if (
-                s.status !== newStatus ||
-                s.attendanceCount !== newAttendance ||
-                s.questionsCount !== newQuestionsCount ||
-                Boolean(s.isBookmarked) !== newBookmarked
-              ) {
-                hasChanged = true;
-                return {
-                  ...s,
-                  status: newStatus,
-                  attendanceCount: newAttendance,
-                  questionsCount: newQuestionsCount,
-                  isBookmarked: newBookmarked,
-                };
-              }
-              return s;
-            });
-            return hasChanged ? updated : prev;
-          });
-        }
-
-        
-        // 2. Sync live questions with equality check to prevent needless re-renders
-        const targetSessionId = selectedSessionId || 'mpss26-d1-02';
-        const liveQuestions = await api.sessions.getQuestions(targetSessionId);
-        if (!isCancelled && Array.isArray(liveQuestions)) {
-          setQuestions((prev) => {
-            const currentForSession = prev.filter((q) => q.sessionId === targetSessionId);
-            if (currentForSession.length === liveQuestions.length) {
-              const isIdentical = liveQuestions.every((lq: any, idx: number) => {
-                const cq = currentForSession[idx];
-                return cq && cq.id === lq.id && cq.upvotes === (lq.upvotes || 0) && cq.status === (lq.status || 'Submitted');
-              });
-              if (isIdentical) return prev;
-            }
-            const others = prev.filter((q) => q.sessionId !== targetSessionId);
-            const mapped: Question[] = liveQuestions.map((q: any) => ({
-              id: q.id,
-              sessionId: q.sessionId || targetSessionId,
-              text: q.text,
-              authorName: q.authorName || 'Anonymous',
-              authorId: q.authorId || (q.isAnonymous ? 'usr-anon' : 'unknown'),
-              upvotes: q.upvotes || 0,
-              upvotedBy: q.hasUpvoted && currentUser?.id ? [currentUser.id] : [],
-              createdAt: q.createdAt || 'Just now',
-              status: (q.status as QuestionStatus) || 'Submitted',
-              isAnonymous: Boolean(q.isAnonymous),
-            }));
-            return [...others, ...mapped];
-          });
-        }
-      } catch (err: any) {
-        if (err?.status === 401) {
-          return;
-        }
-      }
-
-      if (!isCancelled) {
-        const jitterInterval = 20000 + Math.floor(Math.random() * 10000);
-        timeoutId = setTimeout(refreshLiveData, jitterInterval);
-      }
-    };
-
-    const initialDelay = 20000 + Math.floor(Math.random() * 10000);
-    timeoutId = setTimeout(refreshLiveData, initialDelay);
-
-    return () => {
-      isCancelled = true;
-      clearTimeout(timeoutId);
-    };
-  }, [hasAccessConfirmed, selectedSessionId, currentUser?.id]);
-
-  // Set role without touching tokens - role is determined by backend login
+  // Set role without touching tokens - role is determined by demo/view state
   const setRole = useCallback((newRole: DemoRole) => {
     setRoleState(newRole);
   }, []);
@@ -1027,43 +376,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setActiveDelegateTab('home');
   }, []);
 
-  // Update current user profile with MySQL backend synchronization
+  // Update current user profile in local state
   const updateCurrentUser = useCallback(async (data: Partial<Person>) => {
-    // 1. Optimistically update local React state immediately (< 1ms)
     setCurrentUser((prev) => {
       const updatedUser = { ...prev, ...data };
       setAttendees((att) => att.map((a) => (a.id === prev.id ? updatedUser : a)));
       return updatedUser;
     });
     showToast('Profile saved successfully ✓', 'success');
-
-    // 2. Persist to MySQL database via Spring Boot API in background
-    try {
-      const res = await api.attendees.updateMyProfile(data);
-      if (res && res.name) {
-        setCurrentUser((prev) => {
-          const fresh: Person = {
-            ...prev,
-            ...data,
-            name: res.name || prev.name,
-            designation: data.designation !== undefined ? data.designation : (isPlaceholderDesignation(res.designation) ? '' : (res.designation || prev.designation)),
-            company: data.company !== undefined ? data.company : (isPlaceholderCompany(res.company) ? '' : (res.company || prev.company)),
-            bio: res.bio || prev.bio,
-            email: res.email || prev.email,
-            mobile: data.mobile !== undefined ? data.mobile : (res.mobile || prev.mobile),
-            avatar: res.avatar || prev.avatar,
-            linkedin: data.linkedin !== undefined ? data.linkedin : (res.linkedin || prev.linkedin),
-            twitter: data.twitter !== undefined ? data.twitter : (res.twitter || prev.twitter),
-            interests: (res.interests && res.interests.length > 0) ? res.interests : prev.interests,
-            skills: (res.skills && res.skills.length > 0) ? res.skills : prev.skills,
-          };
-          setAttendees((att) => att.map((a) => (a.id === prev.id ? fresh : a)));
-          return fresh;
-        });
-      }
-    } catch (err: any) {
-      console.warn('Backend updateMyProfile background sync skipped/failed:', err);
-    }
   }, [showToast]);
 
   // Update specific attendee info (used by organizer console)
@@ -1509,35 +829,31 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast('Question submitted ✓', 'success');
   }, [currentUser, showToast]);
 
-  // Upvote Question
+  // Upvote Question (optimistic local state)
   const upvoteQuestion = useCallback(async (questionId: string) => {
     const q = questions.find((item) => item.id === questionId);
     if (!q) return { success: false };
 
-    try {
-      const res = await api.sessions.upvoteQuestion(questionId);
-      if (res && typeof res.upvotes === 'number') {
-        setQuestions((prev) =>
-          prev.map((item) =>
-            item.id === questionId
-              ? {
-                  ...item,
-                  upvotes: res.upvotes,
-                  upvotedBy: res.hasUpvoted
-                    ? (item.upvotedBy.includes(currentUser.id) ? item.upvotedBy : [...item.upvotedBy, currentUser.id])
-                    : item.upvotedBy.filter((id) => id !== currentUser.id),
-                }
-              : item
-          )
-        );
-        showToast(res.hasUpvoted ? 'Question upvoted ✓' : 'Upvote removed', 'info');
-        return { success: true };
-      }
-    } catch (err: any) {
-      console.warn('Backend upvoteQuestion error:', err);
-      showToast(err.message || 'Failed to toggle upvote', 'error');
-    }
-    return { success: false };
+    const userId = currentUser.id || 'usr-delegate';
+    const hasUpvoted = q.upvotedBy.includes(userId);
+    const newUpvotes = hasUpvoted ? Math.max(0, q.upvotes - 1) : q.upvotes + 1;
+    const newUpvotedBy = hasUpvoted
+      ? q.upvotedBy.filter((id) => id !== userId)
+      : [...q.upvotedBy, userId];
+
+    setQuestions((prev) =>
+      prev.map((item) =>
+        item.id === questionId
+          ? {
+              ...item,
+              upvotes: newUpvotes,
+              upvotedBy: newUpvotedBy,
+            }
+          : item
+      )
+    );
+    showToast(!hasUpvoted ? 'Question upvoted ✓' : 'Upvote removed', 'info');
+    return { success: true };
   }, [questions, currentUser.id, showToast]);
 
   // Update question status (Moderator action)
@@ -1698,36 +1014,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast(`Successfully imported ${count} registrations from CSV ✓`, 'success');
   }, [showToast]);
 
-  // Toggle bookmark session
-  const toggleBookmarkSession = useCallback(async (sessionId: string) => {
-    const previousSessions = sessions;
-    // 1. Optimistic UI update
+  // Toggle bookmark session (purely local state)
+  const toggleBookmarkSession = useCallback((sessionId: string) => {
     setSessions((prev) =>
       prev.map((s) => {
         if (s.id === sessionId) {
           const next = !s.isBookmarked;
-          showToast(next ? `Session added to My Schedule ✓` : `Session removed from My Schedule`, 'info');
           return { ...s, isBookmarked: next };
         }
         return s;
       })
     );
-
-    // 2. Persist to MySQL backend and confirm response
-    try {
-      const res = await api.sessions.toggleBookmark(sessionId);
-      if (res && typeof res.isBookmarked === 'boolean') {
-        setSessions((prev) =>
-          prev.map((s) => (s.id === sessionId ? { ...s, isBookmarked: res.isBookmarked } : s))
-        );
-      }
-    } catch (err: any) {
-      console.warn('Backend toggleBookmark error:', err);
-      // Rollback on failure
-      setSessions(previousSessions);
-      showToast(err?.message || 'Failed to update bookmark on server', 'error');
-    }
-  }, [sessions, showToast]);
+  }, []);
 
   // Update session
   const updateSession = useCallback((sessionId: string, data: Partial<Session>) => {

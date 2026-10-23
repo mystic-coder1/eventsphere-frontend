@@ -110,7 +110,6 @@ export const DelegateHome: React.FC = () => {
     setSelectedCompanyId,
     sessions,
     exhibitors,
-    toggleBookmarkSession,
     showToast,
   } = useStore();
 
@@ -713,21 +712,6 @@ export const DelegateHome: React.FC = () => {
                   </span>
                 )}
               </div>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleBookmarkSession(currentSession.id);
-                }}
-                className="text-[#111827] p-0.5 hover:scale-110 transition-transform"
-                aria-label="Bookmark session"
-              >
-                {isCurrentBookmarked ? (
-                  <BookmarkCheck className="w-4.5 h-4.5 text-[#DC2626] fill-[#DC2626]" />
-                ) : (
-                  <Bookmark className="w-4.5 h-4.5 text-[#111827]" />
-                )}
-              </button>
             </div>
 
             {/* Title & Location */}

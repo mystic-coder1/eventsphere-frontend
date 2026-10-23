@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { DelegatePartners } from '@/components/delegate/DelegatePartners';
 

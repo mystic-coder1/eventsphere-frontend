@@ -21,8 +21,6 @@ export const PersonDetailModal: React.FC = () => {
     setSelectedPersonId,
     attendees,
     sessions,
-    savedPeopleIds,
-    toggleSavePerson,
     updateAttendee,
     currentUser,
     role,
@@ -161,8 +159,6 @@ export const PersonDetailModal: React.FC = () => {
   }, [selectedPersonId, person, setSelectedPersonId]);
 
   if (!selectedPersonId || !person) return null;
-
-  const isSaved = savedPeopleIds.includes(person.id);
 
   const handleStartEdit = () => {
     setEditForm({
@@ -322,14 +318,6 @@ export const PersonDetailModal: React.FC = () => {
           <>
             {/* Identity & Avatar */}
             <div className="flex items-start gap-3 relative">
-              <button
-                onClick={() => toggleSavePerson(person.id)}
-                className="absolute top-0 right-0 p-1.5 rounded-full hover:bg-gray-100 transition-colors"
-                title={isSaved ? "Remove from Saved" : "Save Person"}
-              >
-                <Star className={`w-5 h-5 ${isSaved ? 'fill-yellow-400 text-yellow-400' : 'text-[#9CA3AF]'}`} />
-              </button>
-
               {hasRealProfilePhoto(person) ? (
                 <div className="relative w-14 h-14 rounded-full overflow-hidden shrink-0 shadow-sm border border-[#E5E7EB]">
                   <img

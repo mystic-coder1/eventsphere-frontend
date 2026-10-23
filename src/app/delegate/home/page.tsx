@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { DelegateHome } from '../../../components/delegate/DelegateHome';
 

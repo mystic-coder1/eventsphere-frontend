@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Profile Image Storage Utility
  * 
  * - Email-scoped localStorage key: profile_image_${user.email}

@@ -1,16 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useStore } from '../../../../lib/store';
-import { DelegateSchedule } from '../../../../components/delegate/DelegateSchedule';
+import { useRouter } from 'next/navigation';
 
 export default function MySchedulePage() {
-  const { setScheduleSubTab, setSelectedSessionId } = useStore();
+  const router = useRouter();
 
   useEffect(() => {
-    setScheduleSubTab('saved');
-    setSelectedSessionId(null);
-  }, [setScheduleSubTab, setSelectedSessionId]);
+    router.replace('/delegate/agenda');
+  }, [router]);
 
-  return <DelegateSchedule />;
+  return null;
 }

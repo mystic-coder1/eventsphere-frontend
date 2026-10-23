@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Cloudinary Profile Photos Mapping & Resolver
  * Provides hosted Cloudinary profile photos for summit speakers, dignitaries, and attendees.
  */

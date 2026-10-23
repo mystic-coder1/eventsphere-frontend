@@ -1,4 +1,4 @@
-export interface FloorBooth {
+﻿export interface FloorBooth {
   id: string;
   number: number | string;
   name: string;

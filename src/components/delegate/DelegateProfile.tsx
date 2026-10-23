@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building, Calendar, ChevronRight, HelpCircle, LogOut, Pencil, Star } from 'lucide-react';
+import { ChevronRight, HelpCircle, Pencil, User } from 'lucide-react';
 
 import { useStore } from '../../lib/store';
 import { calculateProfileCompletion } from '../../lib/mockData';
@@ -18,22 +18,7 @@ export const DelegateProfile: React.FC<DelegateProfileProps> = () => {
   const {
     currentUser,
     setCurrentUser,
-    savedPeopleIds,
-    sessions,
-    showToast,
-    setActiveDelegateTab,
-    setSelectedSessionId,
-    setViewSavedPeopleOnly,
-    setViewSavedCompaniesOnly,
-    savedCompanyIds,
-    logout,
-    setScheduleSubTab,
   } = useStore();
-
-    const handleLogout = () => {
-    logout();
-    router.push('/delegate/home');
-  };
 
   // Sync email-scoped profile image from localStorage
   useEffect(() => {
@@ -46,7 +31,6 @@ export const DelegateProfile: React.FC<DelegateProfileProps> = () => {
     }
   }, [currentUser?.email]);
 
-  const savedSessionsCount = sessions.filter((s) => s.isBookmarked).length;
   const profileCompletion = calculateProfileCompletion(currentUser); 
 
   return (
@@ -119,67 +103,20 @@ export const DelegateProfile: React.FC<DelegateProfileProps> = () => {
         </div>
       </div>
 
-      {/* Navigation Boxes: Saved People, Saved Exhibitors, My Schedule, Help & Support */}
+      {/* Navigation Options */}
       <div className="space-y-2">
-        {/* Saved People */}
+        {/* Edit Profile */}
         <button
           onClick={() => {
-            router.push('/delegate/profile/saved-people');
+            router.push('/delegate/profile/edit');
           }}
           className="w-full bg-white py-3 px-3.5 rounded-[14px] border border-[#DEDCD7] shadow-xs hover:border-[#181818] transition-all text-left flex items-center justify-between active:scale-[0.99] group cursor-pointer"
         >
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-[#F6F4F0] border border-[#EBE8E2] flex items-center justify-center text-[#181818] group-hover:bg-[#181818] group-hover:text-white transition-colors flex-shrink-0">
-              <Star className="w-4.5 h-4.5" />
+              <User className="w-4.5 h-4.5" />
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-medium text-[#181818] text-[14px] tracking-tight">Saved People</span>
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#F4F4F5] text-[#4B5563] border border-[#E5E7EB]">
-                {savedPeopleIds.length}
-              </span>
-            </div>
-          </div>
-          <ChevronRight className="w-4 h-4 text-[#9CA3AF] group-hover:text-[#181818] group-hover:translate-x-0.5 transition-all" />
-        </button>
-
-        {/* Saved Exhibitors */}
-        <button
-          onClick={() => {
-            router.push('/delegate/profile/saved-exhibitors');
-          }}
-          className="w-full bg-white py-3 px-3.5 rounded-[14px] border border-[#DEDCD7] shadow-xs hover:border-[#181818] transition-all text-left flex items-center justify-between active:scale-[0.99] group cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#F6F4F0] border border-[#EBE8E2] flex items-center justify-center text-[#181818] group-hover:bg-[#181818] group-hover:text-white transition-colors flex-shrink-0">
-              <Building className="w-4.5 h-4.5" />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-medium text-[#181818] text-[14px] tracking-tight">Saved Exhibitors</span>
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#F4F4F5] text-[#4B5563] border border-[#E5E7EB]">
-                {savedCompanyIds.length}
-              </span>
-            </div>
-          </div>
-          <ChevronRight className="w-4 h-4 text-[#9CA3AF] group-hover:text-[#181818] group-hover:translate-x-0.5 transition-all" />
-        </button>
-
-        {/* My Schedule */}
-        <button
-          onClick={() => {
-            router.push('/delegate/agenda/myschedule');
-          }}
-          className="w-full bg-white py-3 px-3.5 rounded-[14px] border border-[#DEDCD7] shadow-xs hover:border-[#181818] transition-all text-left flex items-center justify-between active:scale-[0.99] group cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#F6F4F0] border border-[#EBE8E2] flex items-center justify-center text-[#181818] group-hover:bg-[#181818] group-hover:text-white transition-colors flex-shrink-0">
-              <Calendar className="w-4.5 h-4.5" />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-medium text-[#181818] text-[14px] tracking-tight">My Schedule</span>
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#F4F4F5] text-[#4B5563] border border-[#E5E7EB]">
-                {savedSessionsCount}
-              </span>
-            </div>
+            <span className="font-medium text-[#181818] text-[14px] tracking-tight">Edit Profile</span>
           </div>
           <ChevronRight className="w-4 h-4 text-[#9CA3AF] group-hover:text-[#181818] group-hover:translate-x-0.5 transition-all" />
         </button>
@@ -198,17 +135,6 @@ export const DelegateProfile: React.FC<DelegateProfileProps> = () => {
             <span className="font-medium text-[#181818] text-[14px] tracking-tight">Help & Support</span>
           </div>
           <ChevronRight className="w-4 h-4 text-[#9CA3AF] group-hover:text-[#181818] group-hover:translate-x-0.5 transition-all" />
-        </button>
-      </div>
-
-      {/* Log out Action directly below Help & Support */}
-      <div className="pt-1 pb-4">
-        <button
-          onClick={handleLogout}
-          className="w-full py-2.5 bg-white hover:bg-red-50 border border-[#DEDCD7] hover:border-red-200 text-[#B51F32] font-semibold text-[13px] rounded-[13px] shadow-xs transition-colors flex items-center justify-center gap-2 active:scale-98 cursor-pointer"
-        >
-          <LogOut className="w-4 h-4" />
-          <span>Log out</span>
         </button>
       </div>
     </div>

@@ -1,19 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useStore } from '../../../../lib/store';
-import { DelegatePeople } from '../../../../components/delegate/DelegatePeople';
+import { useRouter } from 'next/navigation';
 
 export default function SavedPeoplePage() {
-  const { setViewSavedPeopleOnly } = useStore();
+  const router = useRouter();
 
   useEffect(() => {
-    setViewSavedPeopleOnly(true);
-    return () => {
-      // Reset when leaving this page
-      setViewSavedPeopleOnly(false);
-    };
-  }, [setViewSavedPeopleOnly]);
+    router.replace('/delegate/people');
+  }, [router]);
 
-  return <DelegatePeople />;
+  return null;
 }

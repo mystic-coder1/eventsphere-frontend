@@ -9,6 +9,7 @@ import { DelegateBottomNavRouted } from '../../components/delegate/DelegateBotto
 import { cleanupLingeringOverlays } from '../../lib/overlayCleanup';
 import { CheckCircle2, Info, AlertCircle } from 'lucide-react';
 
+// Modals (dynamically loaded on demand)
 const PersonDetailModal = dynamic(
   () => import('../../components/modals/PersonDetailModal').then((mod) => mod.PersonDetailModal),
   { ssr: false }
@@ -21,19 +22,11 @@ const MyQRCodeModal = dynamic(
   () => import('../../components/modals/MyQRCodeModal').then((mod) => mod.MyQRCodeModal),
   { ssr: false }
 );
-const AccessScreen = dynamic(
-  () => import('../../components/auth/AccessScreen').then((mod) => mod.AccessScreen),
-  { ssr: false }
-);
 
 export default function DelegateLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const {
-    role,
-    hasAccessConfirmed,
-    isSessionLoading,
-    setHasAccessConfirmed,
     selectedPersonId,
     setSelectedPersonId,
     toast,
@@ -42,56 +35,13 @@ export default function DelegateLayout({ children }: { children: React.ReactNode
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (!isSessionLoading && role !== 'delegate') {
-      router.push('/');
-    }
-  }, [role, router, isSessionLoading]);
-
-  // Clean up modals and eradicate lingering Google Identity Services (GIS) One-Tap / FedCM overlays on route change
+  // Clean up modals and overlays on route change
   useEffect(() => {
     setSelectedPersonId(null);
     setIsPrivacyModalOpen(false);
     setIsQRModalOpen(false);
     cleanupLingeringOverlays();
-
-    // Safety timeout to catch any delayed GIS DOM injections
-    const timer = setTimeout(() => {
-      cleanupLingeringOverlays();
-    }, 400);
-
-    return () => clearTimeout(timer);
   }, [pathname, setSelectedPersonId]);
-
-  if (isSessionLoading) {
-    return (
-      <div className="bg-[#F6F4F0] min-h-[100dvh] flex flex-col font-sans items-center justify-center">
-        <PhoneFrame>
-          <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-3">
-            <div className="w-8 h-8 border-2 border-[#181818] border-t-transparent rounded-full animate-spin" />
-            <p className="text-[12px] font-semibold text-[#6B6B6B] tracking-wide uppercase">
-              Verifying Session...
-            </p>
-          </div>
-        </PhoneFrame>
-      </div>
-    );
-  }
-
-  if (!hasAccessConfirmed) {
-    return (
-      <div className="bg-[#F6F4F0] min-h-[100dvh] flex flex-col font-sans">
-        <PhoneFrame>
-          <AccessScreen
-            onSuccess={() => {
-              cleanupLingeringOverlays();
-              setHasAccessConfirmed(true);
-            }}
-          />
-        </PhoneFrame>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-[#F6F4F0] min-h-[100dvh] flex flex-col font-sans">

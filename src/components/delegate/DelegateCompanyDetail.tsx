@@ -12,8 +12,6 @@ export const DelegateCompanyDetail: React.FC = () => {
     setActiveDelegateTab, 
     selectedCompanyId, 
     exhibitors, 
-    savedCompanyIds, 
-    toggleSaveCompany
   } = useStore();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -76,21 +74,9 @@ export const DelegateCompanyDetail: React.FC = () => {
             <p className="text-[12px]">Brilliant Convention Centre, Indore, MP</p>
           </div>
 
-          <p className="text-[12px] text-[#181818] leading-relaxed mb-2">
+          <p className="text-[12px] text-[#181818] leading-relaxed">
             {company.company} is showcasing their latest innovations in the {company.category} space. Visit {formatBoothBadge(getOfficialBoothNumber(company?.company, company?.booth))} at MPSS26 to explore their products and engage with their experts.
           </p>
-
-          <button 
-            onClick={() => toggleSaveCompany(company.id)}
-            className={`w-full py-2.5 rounded-lg border flex items-center justify-center gap-2 font-bold text-[12px] active:scale-95 transition-transform ${
-              savedCompanyIds.includes(company.id)
-                ? 'bg-[#F0FDF4] border-[#BBF7D0] text-[#166534]'
-                : 'border-[#181818] text-[#181818] hover:bg-gray-50'
-            }`}
-          >
-            <Star className={`w-4 h-4 ${savedCompanyIds.includes(company.id) ? 'fill-[#166534]' : ''}`} />
-            {savedCompanyIds.includes(company.id) ? 'Company Saved' : 'Save Company'}
-          </button>
         </div>
       </div>
     </div>

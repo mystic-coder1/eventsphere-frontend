@@ -77,7 +77,6 @@ export const DelegateSchedule: React.FC = () => {
     setAttendees,
     selectedPersonId,
     setSelectedPersonId,
-    toggleBookmarkSession,
     selectedSessionId,
     setSelectedSessionId,
     currentUser,
@@ -88,23 +87,8 @@ export const DelegateSchedule: React.FC = () => {
     setSessionBackTab,
   } = useStore();
 
-  const activeTab = scheduleSubTab;
-  const setActiveTab = setScheduleSubTab;
   const [activeDay, setActiveDay] = useState<number>(1);
   const [detailSubTab, setDetailSubTab] = useState<'overview' | 'speaker'>('overview');
-
-  // Auto-switch to day with saved sessions if user opens My Schedule
-  useEffect(() => {
-    if (activeTab === 'saved') {
-      const day1Saved = sessions.some((s) => s.day === 1 && s.isBookmarked);
-      const day2Saved = sessions.some((s) => s.day === 2 && s.isBookmarked);
-      if (!day1Saved && day2Saved) {
-        setActiveDay(2);
-      } else if (day1Saved) {
-        setActiveDay(1);
-      }
-    }
-  }, [activeTab, sessions]);
 
   // Helper to resolve all distinct speaker profiles for a session
   const resolveSessionSpeakers = (session: Session): Person[] => {
@@ -303,11 +287,9 @@ export const DelegateSchedule: React.FC = () => {
   const daySavedSessions = daySessions.filter((s) => s.isBookmarked);
   const totalSavedSessions = enhancedSessions.filter((s) => s.isBookmarked);
 
-  // Filter sessions by Day and Tab
+  // Filter sessions by Day
   const filteredSessions = enhancedSessions.filter((s) => {
-    if (s.day !== activeDay) return false;
-    if (activeTab === 'saved' && !s.isBookmarked) return false;
-    return true;
+    return s.day === activeDay;
   });
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -316,7 +298,7 @@ export const DelegateSchedule: React.FC = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo(0, 0);
     }
-  }, [selectedSessionId, activeTab, activeDay]);
+  }, [selectedSessionId, activeDay]);
 
   // If viewing session detail
   if (activeSession) {
@@ -352,18 +334,6 @@ export const DelegateSchedule: React.FC = () => {
             </button>
 
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => toggleBookmarkSession(activeSession.id)}
-                className="w-10 h-10 rounded-full bg-black/45 backdrop-blur-md border border-white/20 flex items-center justify-center text-white active:scale-95 transition-all shadow-md"
-                aria-label={activeSession.isBookmarked ? 'Saved to schedule' : 'Save session'}
-              >
-                {activeSession.isBookmarked ? (
-                  <BookmarkCheck className="w-5 h-5 text-[#DC2626] fill-[#DC2626]" />
-                ) : (
-                  <Bookmark className="w-5 h-5 text-white" />
-                )}
-              </button>
-
               {activeSession.status === 'live' && (
                 <span className="bg-[#DCFCE7] text-[#166534] font-bold text-[12px] px-3 py-1.5 rounded-lg shadow-sm tracking-wider uppercase backdrop-blur-sm animate-pulse">
                   LIVE NOW
@@ -545,45 +515,12 @@ export const DelegateSchedule: React.FC = () => {
           </h1>
         </div>
 
-        {/* Segmented Top Toggle: All Sessions (X) | My Schedule (Y) */}
-        <div className="pt-1.5 pb-2">
-          <div className="flex bg-[#F1EFEA] p-1 rounded-xl border border-[#E2DFD8]">
-            <button
-              onClick={() => {
-                setActiveTab('all');
-                router.push('/delegate/agenda/allsessions');
-              }}
-              className={`flex-1 py-2 rounded-lg text-[13px] font-semibold transition-all ${
-                activeTab === 'all'
-                  ? 'bg-white text-[#111827] shadow-xs border border-black/5'
-                  : 'text-[#64748B] hover:text-[#111827]'
-              }`}
-            >
-              All Sessions ({daySessions.length})
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('saved');
-                router.push('/delegate/agenda/myschedule');
-              }}
-              className={`flex-1 py-2 rounded-lg text-[13px] font-medium transition-all flex items-center justify-center gap-1.5 ${
-                activeTab === 'saved'
-                  ? 'bg-white text-[#111827] font-semibold shadow-xs border border-black/5'
-                  : 'text-[#64748B] hover:text-[#111827]'
-              }`}
-            >
-              <Bookmark className="w-3.5 h-3.5" />
-              <span>My Schedule ({totalSavedSessions.length})</span>
-            </button>
-          </div>
-        </div>
-
         {/* Day Selector Tabs: Day 1: Oct 23, 2026 | Day 2: Oct 24, 2026 */}
-        <div className="-mx-3 px-3">
+        <div className="-mx-3 px-3 pt-2">
           <div className="flex -mb-[1px]">
             {[
-              { day: 1, label: 'Day 1: Oct 23, 2026', count: sessions.filter((s) => s.day === 1 && s.isBookmarked).length },
-              { day: 2, label: 'Day 2: Oct 24, 2026', count: sessions.filter((s) => s.day === 2 && s.isBookmarked).length },
+              { day: 1, label: 'Day 1: Oct 23, 2026' },
+              { day: 2, label: 'Day 2: Oct 24, 2026' },
             ].map((d) => (
               <button
                 key={d.day}
@@ -595,13 +532,6 @@ export const DelegateSchedule: React.FC = () => {
                 }`}
               >
                 <span>{d.label}</span>
-                {d.count > 0 && (
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                    activeDay === d.day ? 'bg-[#DC2626] text-white' : 'bg-[#E2E8F0] text-[#475569]'
-                  }`}>
-                    {d.count}
-                  </span>
-                )}
               </button>
             ))}
           </div>
@@ -612,26 +542,12 @@ export const DelegateSchedule: React.FC = () => {
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 pt-3 pb-2">
         {filteredSessions.length === 0 ? (
           <div className="p-8 text-center bg-white rounded-[16px] border border-[#E5E7EB] shadow-xs my-4">
-            <Bookmark className="w-8 h-8 text-[#D1D5DB] mx-auto mb-2" />
             <p className="text-[13px] font-bold text-[#111827]">
-              {activeTab === 'saved' ? `No sessions saved for Day ${activeDay}` : 'No matching sessions found'}
+              No matching sessions found
             </p>
             <p className="text-[11.5px] text-[#6B7280] mt-1 leading-relaxed max-w-[260px] mx-auto">
-              {activeTab === 'saved'
-                ? (sessions.some((s) => s.day !== activeDay && s.isBookmarked)
-                    ? `You have bookmarked sessions on Day ${activeDay === 1 ? 2 : 1}. Switch days above to view them.`
-                    : 'Tap the bookmark ribbon on any session card in All Sessions to add it to your personal itinerary.')
-                : 'Try adjusting your search query or pick a different summit day.'}
+              Try adjusting your search query or pick a different summit day.
             </p>
-            {activeTab === 'saved' && sessions.some((s) => s.day !== activeDay && s.isBookmarked) && (
-              <button
-                type="button"
-                onClick={() => setActiveDay(activeDay === 1 ? 2 : 1)}
-                className="mt-3 px-3 py-1.5 text-xs font-semibold text-white bg-[#DC2626] rounded-lg shadow-sm hover:bg-[#B91C1C] transition-all cursor-pointer"
-              >
-                Switch to Day {activeDay === 1 ? 2 : 1}
-              </button>
-            )}
           </div>
         ) : (
           <div className="relative">
@@ -705,26 +621,11 @@ export const DelegateSchedule: React.FC = () => {
                         }}
                         className="bg-white rounded-[16px] border border-[#E2E8F0] hover:border-[#CBD5E1] p-3 sm:p-3.5 shadow-xs hover:shadow-md transition-all cursor-pointer relative"
                       >
-                        {/* Top row: Track tag & Bookmark icon */}
+                        {/* Top row: Track tag */}
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <span className="text-[10px] uppercase font-bold tracking-wider text-[#64748B] bg-[#F1F5F9] px-2 py-0.5 rounded-md truncate max-w-[200px]">
                             {session.track || 'Session'}
                           </span>
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleBookmarkSession(session.id);
-                            }}
-                            className="p-1 -mr-1 -mt-1 rounded-full text-[#94A3B8] hover:text-[#DC2626] transition-colors"
-                            aria-label={session.isBookmarked ? 'Remove bookmark' : 'Bookmark session'}
-                          >
-                            {session.isBookmarked ? (
-                              <BookmarkCheck className="w-4 h-4 text-[#DC2626] fill-[#DC2626]" />
-                            ) : (
-                              <Bookmark className="w-4 h-4" />
-                            )}
-                          </button>
                         </div>
 
                         {/* Title */}

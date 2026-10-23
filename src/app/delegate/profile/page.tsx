@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { DelegateProfile } from '../../../components/delegate/DelegateProfile';
 

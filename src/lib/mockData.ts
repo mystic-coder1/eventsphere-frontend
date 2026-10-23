@@ -1,4 +1,4 @@
-import { GENERATED_ATTENDEES, GENERATED_EXHIBITORS, GENERATED_PRODUCTS } from "./generatedData";
+﻿import { GENERATED_ATTENDEES, GENERATED_EXHIBITORS, GENERATED_PRODUCTS } from "./generatedData";
 import { sortExhibitors } from "./exhibitorSort";
 import {
   EventMetadata,

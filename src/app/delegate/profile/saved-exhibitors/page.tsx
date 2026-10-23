@@ -1,18 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useStore } from '../../../../lib/store';
-import { DelegateCompanies } from '../../../../components/delegate/DelegateCompanies';
+import { useRouter } from 'next/navigation';
 
 export default function SavedExhibitorsPage() {
-  const { setViewSavedCompaniesOnly } = useStore();
+  const router = useRouter();
 
   useEffect(() => {
-    setViewSavedCompaniesOnly(true);
-    return () => {
-      setViewSavedCompaniesOnly(false);
-    };
-  }, [setViewSavedCompaniesOnly]);
+    router.replace('/delegate/companies');
+  }, [router]);
 
-  return <DelegateCompanies />;
+  return null;
 }
