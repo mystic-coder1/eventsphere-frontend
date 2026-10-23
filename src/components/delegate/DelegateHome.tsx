@@ -224,12 +224,27 @@ export const DelegateHome: React.FC = () => {
     setTouchStartX(null);
   };
 
-  // 10 Curated speakers for "People You Should Meet"
-  const recommendedPeople = useMemo(() => {
+  // 10 Random speakers for "People You Should Meet"
+  const [randomSpeakers, setRandomSpeakers] = useState<Person[]>([]);
+
+  useEffect(() => {
+    const allSpeakers = attendees.filter((a) => a.role === 'speaker');
+    if (allSpeakers.length === 0) return;
+    const shuffled = [...allSpeakers];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    setRandomSpeakers(shuffled.slice(0, 10));
+  }, [attendees]);
+
+  const displaySpeakers = useMemo(() => {
+    if (randomSpeakers.length > 0) return randomSpeakers;
     return RECOMMENDED_PEOPLE_IDS
       .map((id) => attendees.find((a) => a.id === id))
-      .filter(Boolean) as Person[];
-  }, [attendees]);
+      .filter(Boolean)
+      .slice(0, 10) as Person[];
+  }, [randomSpeakers, attendees]);
 
   const [activeSlide, setActiveSlide] = useState(0);
   const totalSlides = 4;
@@ -789,18 +804,18 @@ export const DelegateHome: React.FC = () => {
         </div>
       </div>
 
-      {/* Speakers Section */}
-      {recommendedPeople.length > 0 && (
+      {/* People You Should Meet Section */}
+      {displaySpeakers.length > 0 && (
         <div className="space-y-2 pt-1">
           <div className="flex items-center justify-between px-0.5">
             <h3
-              onClick={() => router.push('/delegate/speakers')}
+              onClick={() => router.push('/delegate/people')}
               className="text-[17px] font-bold text-[#111827] tracking-tight cursor-pointer hover:text-[#B51F32] transition-colors"
             >
-              Speakers
+              People You Should Meet
             </h3>
             <button
-              onClick={() => router.push('/delegate/speakers')}
+              onClick={() => router.push('/delegate/people')}
               className="text-[13px] font-semibold text-[#111827] flex items-center gap-0.5 hover:underline"
             >
               <span>View all</span>
@@ -810,7 +825,7 @@ export const DelegateHome: React.FC = () => {
 
           <div className="overflow-x-auto no-scrollbar -mx-3 px-3 pb-1 pt-1.5">
             <div className="flex gap-3 w-max">
-              {recommendedPeople.map((person) => {
+              {displaySpeakers.map((person) => {
                 const connected = isConnected(person.id);
                 const pending = isPending(person.id);
                 return (

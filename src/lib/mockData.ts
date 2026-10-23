@@ -5267,9 +5267,6 @@ export const calculateProfileCompletion = (user: Partial<Person> | null | undefi
 };
 
 export const RECOMMENDED_PEOPLE_IDS: string[] = [
-  'speaker-dr-mohan-yadav',
-  'speaker-ashok-barnwal',
-  'speaker-prof-rajeev-dixit',
   'speaker-satya-gupta',
   'speaker-nishit-gupta',
   'speaker-charan-gurumoorthy',
@@ -5280,6 +5277,5 @@ export const RECOMMENDED_PEOPLE_IDS: string[] = [
   'speaker-chitra-hariharan',
   'speaker-sanjeev-sehgal',
   'speaker-nitin-kishor',
-  'speaker-narendra-sen',
 ];
 

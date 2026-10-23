@@ -32,6 +32,10 @@ export const DelegatePeople: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [renderLimit, setRenderLimit] = useState(20);
 
+  React.useEffect(() => {
+    setActiveDelegateTab('people');
+  }, [setActiveDelegateTab]);
+
   // Strictly the 10 curated speakers for People You Should Meet
   const baseList = useMemo(() => {
     if (viewSavedPeopleOnly) {
@@ -183,11 +187,11 @@ export const DelegatePeople: React.FC = () => {
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-3.5 py-2.5 space-y-2.5 no-scrollbar pb-2.5">
-        <p className="text-[12.5px] font-medium text-[#6B7280] px-0.5">
-          {viewSavedPeopleOnly
-            ? `${displayedList.length} Saved ${displayedList.length === 1 ? 'Person' : 'People'}`
-            : `${displayedList.length} Recommended ${displayedList.length === 1 ? 'Attendee' : 'Attendees'}`}
-        </p>
+        {viewSavedPeopleOnly && (
+          <p className="text-[12.5px] font-medium text-[#6B7280] px-0.5">
+            {displayedList.length} Saved {displayedList.length === 1 ? 'Person' : 'People'}
+          </p>
+        )}
 
         {/* Attendees / Profiles List */}
         <div className="space-y-2.5">
