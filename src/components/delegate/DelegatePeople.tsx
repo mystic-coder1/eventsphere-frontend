@@ -25,28 +25,8 @@ export const DelegatePeople: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [renderLimit, setRenderLimit] = useState(20);
 
-<<<<<<< HEAD
   // All curated attendees/speakers pool
   const allPool = useMemo(() => {
-=======
-  React.useEffect(() => {
-    setActiveDelegateTab('people');
-  }, [setActiveDelegateTab]);
-
-  // Strictly the 10 curated speakers for People You Should Meet
-  const baseList = useMemo(() => {
-    if (viewSavedPeopleOnly) {
-      const allPool = [...attendees, ...INITIAL_ATTENDEES];
-      const seen = new Set<string>();
-      return savedPeopleIds
-        .map((id) => allPool.find((p) => p.id === id))
-        .filter((p): p is Person => {
-          if (!p || seen.has(p.id)) return false;
-          seen.add(p.id);
-          return true;
-        });
-    }
->>>>>>> b06b99e4a71ce3782f12d6a7daa27c1d98da5470
     return RECOMMENDED_PEOPLE_IDS.map((id) =>
       attendees.find((a) => a.id === id)
     ).filter(Boolean) as Person[];
@@ -105,17 +85,9 @@ export const DelegatePeople: React.FC = () => {
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-3.5 py-2.5 space-y-2.5 no-scrollbar pb-2.5">
-<<<<<<< HEAD
         <p className="text-[12.5px] font-medium text-[#6B7280] px-0.5">
           {displayedList.length} {displayedList.length === 1 ? 'Attendee' : 'Attendees'}
         </p>
-=======
-        {viewSavedPeopleOnly && (
-          <p className="text-[12.5px] font-medium text-[#6B7280] px-0.5">
-            {displayedList.length} Saved {displayedList.length === 1 ? 'Person' : 'People'}
-          </p>
-        )}
->>>>>>> b06b99e4a71ce3782f12d6a7daa27c1d98da5470
 
         {/* Attendees / Profiles List */}
         <div className="space-y-2.5">

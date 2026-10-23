@@ -89,31 +89,9 @@ export const DelegateSchedule: React.FC = () => {
     setSessionBackTab,
   } = useStore();
 
-<<<<<<< HEAD
-  const [activeDay, setActiveDay] = useState<number>(1);
-  const [detailSubTab, setDetailSubTab] = useState<'overview' | 'speaker'>('overview');
-
-=======
-  const activeTab = scheduleSubTab;
-  const setActiveTab = setScheduleSubTab;
   const activeDay = scheduleDay;
   const setActiveDay = setScheduleDay;
   const [detailSubTab, setDetailSubTab] = useState<'overview' | 'speaker'>('overview');
-
-  // Auto-switch to day with saved sessions if user opens My Schedule
-  useEffect(() => {
-    if (activeTab === 'saved') {
-      const day1Saved = sessions.some((s) => s.day === 1 && s.isBookmarked);
-      const day2Saved = sessions.some((s) => s.day === 2 && s.isBookmarked);
-      if (!day2Saved && day1Saved) {
-        setActiveDay(1);
-      } else if (day2Saved) {
-        setActiveDay(2);
-      }
-    }
-  }, [activeTab, sessions, setActiveDay]);
-
->>>>>>> b06b99e4a71ce3782f12d6a7daa27c1d98da5470
   // Helper to resolve all distinct speaker profiles for a session
   const resolveSessionSpeakers = (session: Session): Person[] => {
     if (!session) return [];
