@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -10,7 +10,7 @@ import {
   removeStoredProfileImage,
   compressImageFile,
 } from '../../lib/profileImageStorage';
-import { ArrowLeft, Camera, Loader2, Lock, Save } from 'lucide-react';
+import { ArrowLeft, Camera, Loader2, Save } from 'lucide-react';
 
 export const DelegateEditProfile: React.FC = () => {
   const router = useRouter();
@@ -260,7 +260,7 @@ export const DelegateEditProfile: React.FC = () => {
             <input
               type="text"
               name="name"
-              placeholder="e.g. Hari Gupta"
+              placeholder="e.g. Alex Sharma"
               value={formData.name}
               onChange={handleChange}
               className="w-full px-3 py-2 rounded-lg border border-[#DEDCD7] text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[#181818]"
@@ -302,20 +302,16 @@ export const DelegateEditProfile: React.FC = () => {
           </div>
           
           <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <label className="text-[11.5px] font-semibold text-[#181818]">Email Address</label>
-              <span className="text-[10px] font-medium text-[#71717A] flex items-center gap-1 bg-[#F4F4F5] px-1.5 py-0.5 rounded border border-[#E4E4E7]">
-                <Lock className="w-2.5 h-2.5 text-[#71717A]" />
-                Registered
-              </span>
-            </div>
+            <label className="text-[11.5px] font-semibold text-[#181818]">
+              Email Address <span className="text-[10px] font-normal text-[#9CA3AF]">(Optional)</span>
+            </label>
             <input
               type="email"
               name="email"
+              placeholder="Enter email address"
               value={formData.email}
-              readOnly
-              disabled
-              className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] text-[12.5px] text-[#6B7280] font-medium cursor-not-allowed select-none"
+              onChange={handleChange}
+              className="w-full px-3 py-2 rounded-lg border border-[#DEDCD7] text-[12.5px] focus:outline-none focus:ring-1 focus:ring-[#181818]"
             />
           </div>
 

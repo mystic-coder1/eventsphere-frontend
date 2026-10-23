@@ -59,28 +59,26 @@ export const DelegateProfile: React.FC<DelegateProfileProps> = () => {
           {currentUser.avatar ? (
             <img 
               src={currentUser.avatar} 
-              alt={currentUser.name || 'Delegate'} 
+              alt={currentUser.name || 'Visitor'} 
               className="w-12 h-12 rounded-full object-cover border border-[#E5E7EB] flex-shrink-0" 
             />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-[#F6F4F0] border border-[#E5E7EB] text-[#181818] flex items-center justify-center font-bold text-[16px] flex-shrink-0">
-              {currentUser.name ? currentUser.name.split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2) : '?'}
+            <div className="w-12 h-12 rounded-full bg-[#F6F4F0] border border-[#E5E7EB] text-[#6B7280] flex items-center justify-center flex-shrink-0 shadow-xs">
+              <User className="w-6 h-6" />
             </div>
           )}
           <div className="pr-6 space-y-0.5 min-w-0 flex-1">
             <h2 className="text-[15.5px] font-bold text-[#181818] tracking-tight leading-tight truncate">
-              {currentUser.name || 'Anonymous Delegate'}
+              {currentUser.name || 'Visitor'}
             </h2>
             {[currentUser.designation, currentUser.company].filter(Boolean).length > 0 && (
               <p className="text-[12px] text-[#6B6B6B] leading-tight truncate">
                 {[currentUser.designation, currentUser.company].filter(Boolean).join(' · ')}
               </p>
             )}
-            {currentUser.id !== 'att-hari-gupta' && currentUser.id !== 'att-pushpit-upadhyay' && (
-              <p className="text-[11.5px] text-[#8BA5CD] font-medium leading-tight">
-                {currentUser.ticketType || 'Delegate'} · 2-day
-              </p>
-            )}
+            <p className="text-[11.5px] text-[#8BA5CD] font-medium leading-tight">
+              {currentUser.ticketType || 'Visitor'} · 2-day
+            </p>
           </div>
         </div>
         

@@ -181,7 +181,7 @@ interface StoreContextType {
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'eventsphere_mpss26_store_v13';
+const STORAGE_KEY = 'eventsphere_mpss26_store_v14';
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Navigation & Role
@@ -280,11 +280,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     try {
       if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('eventsphere_mpss26_store_v13');
+        } catch {
+          // ignore
+        }
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
           if (parsed?.currentUser) {
-            setCurrentUser((prev) => ({ ...prev, ...parsed.currentUser }));
+            if (parsed.currentUser.id === 'att-hari-gupta' || parsed.currentUser.name === 'Hari Gupta') {
+              localStorage.removeItem(STORAGE_KEY);
+              setCurrentUser(CURRENT_USER);
+            } else {
+              setCurrentUser((prev) => ({ ...prev, ...parsed.currentUser }));
+            }
           }
         }
       }

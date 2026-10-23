@@ -62,8 +62,8 @@ const PRIVATE_CONTACT_DEFAULT: PrivacyConsent = {
 
 // Current signed-in delegate profile
 export const CURRENT_USER: Person = {
-  id: 'att-hari-gupta',
-  name: 'Hari Gupta',
+  id: 'att-visitor',
+  name: 'Visitor',
   designation: '',
   company: '',
   role: 'delegate',
@@ -74,12 +74,12 @@ export const CURRENT_USER: Person = {
   mobile: '',
   linkedin: '',
   twitter: '',
-  avatar: 'https://res.cloudinary.com/vc0wtqtw/image/upload/v1792450462/hari.png',
+  avatar: '',
   privacy: { ...PRIVATE_CONTACT_DEFAULT },
   checkedIn: true,
   checkInTime: '08:30 AM',
   registrationId: '#5023',
-  ticketType: '',
+  ticketType: 'Visitor',
 };
 
 export const INITIAL_ATTENDEES: Person[] = [

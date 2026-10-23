@@ -30,6 +30,7 @@ import {
   Linkedin,
   Building2,
   Handshake,
+  User,
 } from 'lucide-react';
 import {
   getOptimizedAvatarUrl,
@@ -333,7 +334,7 @@ export const DelegateHome: React.FC = () => {
                 ? 'text-[25px] sm:text-[28px]'
                 : 'text-[30px] sm:text-[32px]'
             }`}>
-              {currentUser.name || 'Delegate'}
+              {currentUser.name || 'Visitor'}
             </h1>
             <p className="text-[12px] text-[#6B6B6B] font-medium mt-1 truncate">
               {[currentUser.designation, currentUser.company].filter(Boolean).join(' · ') || 'MPSS26 Attendee'}
@@ -348,12 +349,12 @@ export const DelegateHome: React.FC = () => {
             {currentUser.avatar ? (
               <img
                 src={currentUser.avatar}
-                alt={currentUser.name || 'Delegate'}
+                alt={currentUser.name || 'Visitor'}
                 className="w-12 h-12 rounded-full border-2 border-white object-cover shadow-sm"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-[#181818] text-white flex items-center justify-center font-bold text-base border-2 border-white shadow-sm">
-                {currentUser.name ? currentUser.name.split(' ').filter(Boolean).map((n) => n[0]).join('').slice(0, 2) : '?'}
+              <div className="w-12 h-12 rounded-full bg-[#F6F4F0] border border-[#E5E7EB] text-[#6B7280] flex items-center justify-center shadow-xs">
+                <User className="w-6 h-6" />
               </div>
             )}
             <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#22C55E] border-2 border-white rounded-full shadow-xs" />
