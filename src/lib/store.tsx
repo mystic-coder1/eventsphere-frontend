@@ -89,6 +89,8 @@ interface StoreContextType {
   setViewSavedCompaniesOnly: (v: boolean) => void;
   scheduleSubTab: 'all' | 'saved';
   setScheduleSubTab: (tab: 'all' | 'saved') => void;
+  scheduleDay: number;
+  setScheduleDay: (day: number) => void;
   savedCompanyIds: string[];
   savedPeopleIds: string[];
   toggleSavePerson: (id: string) => void;
@@ -199,6 +201,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [viewSavedPeopleOnly, setViewSavedPeopleOnly] = useState<boolean>(false);
   const [viewSavedCompaniesOnly, setViewSavedCompaniesOnly] = useState<boolean>(false);
   const [scheduleSubTab, setScheduleSubTab] = useState<'all' | 'saved'>('all');
+  const [scheduleDay, setScheduleDay] = useState<number>(2);
   const [activeExhibitorTab, setActiveExhibitorTab] = useState<'home' | 'leads' | 'scan' | 'products' | 'more'>('home');
   const [activeOrganizerTab, setActiveOrganizerTab] = useState<'overview' | 'attendees' | 'exhibitors' | 'sessions' | 'reports' | 'settings'>('overview');
   const [viewMode, setViewMode] = useState<'frame' | 'responsive'>('frame');
@@ -1839,6 +1842,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setViewSavedCompaniesOnly,
     scheduleSubTab,
     setScheduleSubTab,
+    scheduleDay,
+    setScheduleDay,
     savedCompanyIds,
     savedPeopleIds,
     toggleSavePerson,
@@ -1919,6 +1924,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     viewSavedPeopleOnly,
     viewSavedCompaniesOnly,
     scheduleSubTab,
+    scheduleDay,
+    setScheduleDay,
     savedCompanyIds,
     savedPeopleIds,
     toggleSavePerson,

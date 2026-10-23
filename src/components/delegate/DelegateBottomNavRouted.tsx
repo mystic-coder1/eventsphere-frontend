@@ -13,6 +13,7 @@ export const DelegateBottomNavRouted: React.FC = () => {
     setSelectedPersonId,
     setSelectedSessionId,
     setScheduleSubTab,
+    setScheduleDay,
     setSessionBackTab,
     setViewSavedCompaniesOnly,
     setViewSavedPeopleOnly,
@@ -63,6 +64,7 @@ export const DelegateBottomNavRouted: React.FC = () => {
     if (item.id === 'agenda') {
       setScheduleSubTab('all');
       setSessionBackTab('schedule');
+      setScheduleDay(2);
     }
     if (item.id === 'exhibitors') {
       setViewSavedCompaniesOnly(false);

@@ -4778,30 +4778,6 @@ export const INITIAL_SESSIONS: Session[] = [
     "attendanceCount": 760,
     "isBookmarked": false,
     "questionsCount": 4
-  },
-  {
-    "id": "mpss26-d2-13",
-    "title": "Tea",
-    "track": "Tea Break",
-    "day": 2,
-    "timeRange": "18:00 – 18:30",
-    "room": "Jamawar Hall Pre-Function Area · Ground Floor",
-    "speakerName": "Organizing Committee",
-    "speakerDesignation": "Event Operations",
-    "speakerCompany": "MP Semiconductor Summit 2026",
-    "speakerId": "",
-    "speakerIds": [],
-    "panelists": [],
-    "description": "Summit closing high tea and valedictory networking session.",
-    "takeaways": [
-      "Summit concluding remarks & thank you address",
-      "Exchange of contacts and partnership follow-ups",
-      "Announcement of MPSS 2027 dates"
-    ],
-    "status": "upcoming",
-    "attendanceCount": 650,
-    "isBookmarked": false,
-    "questionsCount": 0
   }
 ];
 
